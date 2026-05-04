@@ -39,14 +39,17 @@ Notes:
 ```
 auth.users (Supabase Auth)
     │
-    ├── group_members  (per-group role: employer | employee, status)
+    ├── group_members  (per-group role: employer | employee, status, display_name)
+    │       │
+    │       ├── member_nicknames  (viewer × target, per-viewer private)
     │       │
     │       └── employee_profiles  (only for role=employee)
     │              │   ├── position_id  (FK, nullable)
     │              │   └── *_override   (NULL = inherit from position)
     │              │
-    │              ├── fixed_amounts        (per-employee, copied from position)
-    │              ├── time_entries         (clock in/out, status open|closed|needs_review)
+    │              ├── employee_notes        (1:1, employer-shared, hidden from employee)
+    │              ├── fixed_amounts         (per-employee, copied from position template)
+    │              ├── time_entries          (clock in/out, status open|closed|needs_review)
     │              └── payments
     │                     └── payment_adjustments  (one-shot at payment time)
     │
@@ -66,6 +69,21 @@ SQL function.
 
 Fixed amounts are *not* live-linked — copied from position template
 when the employee is created, then independent.
+
+**Naming visibility**:
+- `group_members.display_name` is the canonical name; only the user
+  themselves can change it (via `/app/me`, calling
+  `update_my_display_name` which propagates to all their memberships).
+- `member_nicknames(viewer_user_id, target_member_id, nickname)` is a
+  private label set by any viewer on any member they can see; only the
+  viewer reads/writes their own rows.
+- UI shows nickname when present, falls back to display_name.
+
+**Notes** (`employee_notes`) are one row per employee_profile, shared
+across employers of the group, and **never** visible to the employee
+themselves. Separate table so we can scope SELECT to
+`is_group_employer` without touching the existing employee_profiles
+read policy (which lets every member see profile scalars).
 
 ## Design decisions
 
@@ -108,20 +126,26 @@ HourCounter/
 │   │   │   ├── login/              login page + form + action
 │   │   │   └── signup/             signup page + form + action
 │   │   ├── app/                    authenticated area
-│   │   │   ├── layout.tsx          header + auth guard
+│   │   │   ├── layout.tsx          header + auth guard, links avatar to /me
 │   │   │   ├── page.tsx            list of user's groups
 │   │   │   ├── me/                 self-service display name editor
 │   │   │   └── groups/
 │   │   │       ├── new/            create group
 │   │   │       └── [id]/
-│   │   │           ├── page.tsx    group detail
+│   │   │           ├── page.tsx    group detail (members list resolves nicknames)
 │   │   │           ├── invite/     generate + list invitations
-│   │   │           ├── members/[memberId]/  detail + edit (overrides UI)
+│   │   │           ├── members/[memberId]/
+│   │   │           │   ├── page.tsx              detail (nickname, notes, effective values)
+│   │   │           │   └── edit/                 form + RPC update_member_full
 │   │   │           └── positions/
-│   │   │               ├── page.tsx        list
-│   │   │               ├── new/            create
-│   │   │               └── [positionId]/   detail
-│   │   │                   └── edit/       edit + delete actions
+│   │   │               ├── page.tsx              list
+│   │   │               ├── _form-parsing.ts      shared FormData parser
+│   │   │               ├── position-form.tsx     create/edit form (generic)
+│   │   │               ├── new/                  create
+│   │   │               └── [positionId]/
+│   │   │                   ├── page.tsx          detail + Editar/Eliminar
+│   │   │                   ├── delete-position-button.tsx  confirm() + RPC delete_position
+│   │   │                   └── edit/             edit page + RPC update_position
 │   │   ├── auth/
 │   │   │   ├── confirm/route.ts    email link verification
 │   │   │   └── signout/route.ts    POST signout
@@ -209,6 +233,14 @@ HourCounter/
 - **Multi-tenant scoping**: every query against group-scoped tables
   filters by `group_id` AND relies on RLS. Don't return `select *` from
   tables the user might not be allowed to see.
+- **"My membership" queries**: the `group_members` SELECT policy lets
+  any active member see *every* row in their group (needed for the
+  members list). When you want "what is MY role here", you must filter
+  by `user_id = (await supabase.auth.getUser()).data.user.id` and use
+  `.maybeSingle()`. Calling `.single()` without that filter returns
+  multiple rows as soon as a second member exists and silently makes
+  the page fail open. Same trap with `.eq('group_id', id).single()`
+  anywhere else.
 - **Error handling in server actions**: return `{ error: string }` to
   the client (shown via `<ErrorMessage>`), don't throw unless something
   is genuinely broken.
