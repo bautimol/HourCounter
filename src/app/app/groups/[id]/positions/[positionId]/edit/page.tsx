@@ -30,11 +30,16 @@ export default async function EditPositionPage({
 
   if (!group) notFound();
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   const { data: myMembership } = await supabase
     .from("group_members")
     .select("role")
     .eq("group_id", id)
-    .single();
+    .eq("user_id", user!.id)
+    .maybeSingle();
 
   if (!myMembership || myMembership.role !== "employer") {
     redirect(`/app/groups/${id}`);

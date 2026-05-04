@@ -9,9 +9,14 @@ import { Badge } from "@/components/ui/badge";
 export default async function AppHomePage() {
   const supabase = await createClient();
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   const { data: memberships, error } = await supabase
     .from("group_members")
     .select("role, joined_at, group:groups(id, name, created_at)")
+    .eq("user_id", user!.id)
     .eq("status", "active")
     .order("joined_at", { ascending: false });
 

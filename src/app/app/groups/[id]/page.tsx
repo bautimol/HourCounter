@@ -46,11 +46,16 @@ export default async function GroupDetailPage({
     notFound();
   }
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   const { data: myMembership } = await supabase
     .from("group_members")
     .select("role")
     .eq("group_id", id)
-    .single();
+    .eq("user_id", user!.id)
+    .maybeSingle();
 
   const { data: members } = await supabase
     .from("group_members")
