@@ -118,7 +118,8 @@ HourCounter/
 │   │   │           └── positions/
 │   │   │               ├── page.tsx        list
 │   │   │               ├── new/            create
-│   │   │               └── [positionId]/   detail (edit pending)
+│   │   │               └── [positionId]/   detail
+│   │   │                   └── edit/       edit + delete actions
 │   │   ├── auth/
 │   │   │   ├── confirm/route.ts    email link verification
 │   │   │   └── signout/route.ts    POST signout
@@ -150,7 +151,8 @@ HourCounter/
 │       ├── 0003_member_display_name.sql   default display_name from auth.users
 │       ├── 0004_invitations.sql           create/get/accept invitation fns
 │       ├── 0005_positions.sql             positions + position_fixed_amounts + override fields on employee_profiles
-│       └── 0006_fixed_amount_custom_days.sql  every_n_days frequency
+│       ├── 0006_fixed_amount_custom_days.sql  every_n_days frequency
+│       └── 0007_position_management.sql   update_position() + delete_position()
 ├── .env.local                      Supabase URL + anon key (gitignored)
 ├── .env.local.example              template
 ├── package.json
@@ -169,8 +171,8 @@ HourCounter/
 | Invitations (link, role, optional position) | ✅ done        |
 | Public invite landing                       | ✅ done        |
 | Positions: list + create + view             | ✅ done        |
-| Positions: edit                             | ⏳ pending     |
-| Positions: delete                           | ⏳ pending     |
+| Positions: edit                             | ✅ done        |
+| Positions: delete (blocked while in use)    | ✅ done        |
 | Employee profile editor (with overrides UI) | ⏳ pending     |
 | Clock in / out                              | ⏳ pending     |
 | Verification flow (employer reviews shifts) | ⏳ pending     |
@@ -239,8 +241,12 @@ Supabase config required:
 
 ## Open questions / things to decide later
 
-- **Position editing**: when we add it, should saving propagate to
-  in-sync employees immediately, or queue + show diff first?
+- **Position editing propagation**: today, editing a position's scalar
+  fields immediately changes effective values for every in-sync
+  employee (via `effective_employee_profile()` resolution at read
+  time). The fixed-amounts list, however, was already snapshotted at
+  invitation time and is not updated on edit. Do we want a "propagate
+  fixed amounts" affordance later (queue + diff + opt-in apply)?
 - **Time-entry verification**: push notification vs email vs in-app
   badge. Probably PWA push first.
 - **Currency UX**: today the form accepts free text, validated to 3
@@ -249,8 +255,10 @@ Supabase config required:
   do we want a dropdown switcher in the header instead?
 - **Generated types**: when does the friction of untyped data outweigh
   the friction of running `supabase gen types` after every migration?
-- **Soft-deletion of positions**: a position with employees attached —
-  block delete, archive, or cascade-archive employees?
+- **Position deletion** (decided 2026-05-04): blocked when at least one
+  active employee uses the role. Archived employees do not block. No
+  soft-delete yet — if we need a "deprecate but keep historical
+  payments referencing it" mode, revisit.
 
 ## Pointers
 

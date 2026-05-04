@@ -9,6 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { PositionForm } from "../position-form";
+import { createPositionAction } from "./actions";
 
 export default async function NewPositionPage({
   params,
@@ -36,6 +37,8 @@ export default async function NewPositionPage({
     redirect(`/app/groups/${id}`);
   }
 
+  const action = createPositionAction.bind(null, id);
+
   return (
     <div className="mx-auto max-w-2xl space-y-4">
       <Link
@@ -51,7 +54,7 @@ export default async function NewPositionPage({
           <CardTitle>Nuevo rol</CardTitle>
         </CardHeader>
         <CardBody>
-          <PositionForm groupId={id} />
+          <PositionForm action={action} submitLabel="Crear rol" />
         </CardBody>
       </Card>
     </div>

@@ -2,10 +2,6 @@
 
 import { useActionState, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
-import {
-  createPositionAction,
-  type CreatePositionState,
-} from "./new/actions";
 import { Button } from "@/components/ui/button";
 import { SubmitButton } from "@/components/submit-button";
 import {
@@ -17,7 +13,9 @@ import {
 } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 
-const initialState: CreatePositionState = { error: null };
+export type PositionFormState = {
+  error: string | null;
+};
 
 type Frequency =
   | "per_period"
@@ -33,6 +31,22 @@ type FixedAmountRow = {
   customDays: string;
 };
 
+export type PositionFormInitial = {
+  name: string;
+  hourlyRate: string;
+  paymentPeriod: string;
+  customPeriodDays: string;
+  currency: string;
+  fixedAmounts: {
+    description: string;
+    amount: string;
+    frequency: Frequency;
+    customDays: string;
+  }[];
+};
+
+const initialState: PositionFormState = { error: null };
+
 function newRow(): FixedAmountRow {
   return {
     key: crypto.randomUUID(),
@@ -43,12 +57,37 @@ function newRow(): FixedAmountRow {
   };
 }
 
-export function PositionForm({ groupId }: { groupId: string }) {
-  const action = createPositionAction.bind(null, groupId);
+function rowsFromInitial(initial?: PositionFormInitial): FixedAmountRow[] {
+  if (!initial) return [];
+  return initial.fixedAmounts.map((fa) => ({
+    key: crypto.randomUUID(),
+    description: fa.description,
+    amount: fa.amount,
+    frequency: fa.frequency,
+    customDays: fa.customDays,
+  }));
+}
+
+export function PositionForm({
+  action,
+  initial,
+  submitLabel,
+}: {
+  action: (
+    prevState: PositionFormState,
+    formData: FormData,
+  ) => Promise<PositionFormState>;
+  initial?: PositionFormInitial;
+  submitLabel: string;
+}) {
   const [state, formAction] = useActionState(action, initialState);
 
-  const [paymentPeriod, setPaymentPeriod] = useState("weekly");
-  const [rows, setRows] = useState<FixedAmountRow[]>([]);
+  const [paymentPeriod, setPaymentPeriod] = useState(
+    initial?.paymentPeriod ?? "weekly",
+  );
+  const [rows, setRows] = useState<FixedAmountRow[]>(() =>
+    rowsFromInitial(initial),
+  );
 
   function addRow() {
     setRows((prev) => [...prev, newRow()]);
@@ -73,6 +112,7 @@ export function PositionForm({ groupId }: { groupId: string }) {
           maxLength={80}
           autoFocus
           placeholder="ej. Cajero"
+          defaultValue={initial?.name ?? ""}
         />
       </Field>
 
@@ -88,6 +128,7 @@ export function PositionForm({ groupId }: { groupId: string }) {
             min="0"
             required
             placeholder="0.00"
+            defaultValue={initial?.hourlyRate ?? ""}
           />
         </Field>
 
@@ -96,7 +137,7 @@ export function PositionForm({ groupId }: { groupId: string }) {
           <Input
             id="currency"
             name="currency"
-            defaultValue="ARS"
+            defaultValue={initial?.currency ?? "ARS"}
             maxLength={3}
             pattern="[A-Za-z]{3}"
           />
@@ -132,6 +173,7 @@ export function PositionForm({ groupId }: { groupId: string }) {
               step="1"
               required
               placeholder="ej. 10"
+              defaultValue={initial?.customPeriodDays ?? ""}
             />
           </Field>
         )}
@@ -192,7 +234,6 @@ export function PositionForm({ groupId }: { groupId: string }) {
                       onChange={(e) =>
                         updateRow(row.key, {
                           frequency: e.target.value as Frequency,
-                          // reset custom days when changing away from every_n_days
                           customDays:
                             e.target.value === "every_n_days"
                               ? row.customDays
@@ -256,7 +297,7 @@ export function PositionForm({ groupId }: { groupId: string }) {
       {state.error && <ErrorMessage>{state.error}</ErrorMessage>}
 
       <div className="flex items-center justify-end gap-2">
-        <SubmitButton fullWidth={false}>Crear rol</SubmitButton>
+        <SubmitButton fullWidth={false}>{submitLabel}</SubmitButton>
       </div>
     </form>
   );

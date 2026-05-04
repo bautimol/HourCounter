@@ -10,6 +10,7 @@ import {
   formatCurrency,
   paymentPeriodLabel,
 } from "@/lib/format";
+import { DeletePositionButton } from "./delete-position-button";
 
 export default async function PositionDetailPage({
   params,
@@ -89,15 +90,20 @@ export default async function PositionDetailPage({
             )}
           </p>
         </div>
-        <button
-          type="button"
-          disabled
-          title="Próximamente"
-          className="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-1.5 text-xs text-muted-foreground"
-        >
-          <Pencil className="h-3.5 w-3.5" aria-hidden />
-          Editar
-        </button>
+        <div className="flex flex-wrap items-start gap-2">
+          <Link
+            href={`/app/groups/${id}/positions/${positionId}/edit`}
+            className="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-1.5 text-xs text-foreground hover:bg-surface-muted"
+          >
+            <Pencil className="h-3.5 w-3.5" aria-hidden />
+            Editar
+          </Link>
+          <DeletePositionButton
+            groupId={id}
+            positionId={positionId}
+            positionName={position.name}
+          />
+        </div>
       </div>
 
       <Card>
