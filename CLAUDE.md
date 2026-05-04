@@ -115,6 +115,7 @@ HourCounter/
 │   │   │       └── [id]/
 │   │   │           ├── page.tsx    group detail
 │   │   │           ├── invite/     generate + list invitations
+│   │   │           ├── members/[memberId]/  detail + edit (overrides UI)
 │   │   │           └── positions/
 │   │   │               ├── page.tsx        list
 │   │   │               ├── new/            create
@@ -173,7 +174,8 @@ HourCounter/
 | Positions: list + create + view             | ✅ done        |
 | Positions: edit                             | ✅ done        |
 | Positions: delete (blocked while in use)    | ✅ done        |
-| Employee profile editor (with overrides UI) | ⏳ pending     |
+| Employee profile editor (scalar overrides)  | ✅ done        |
+| Employee profile editor (fixed amounts)     | ⏳ pending     |
 | Clock in / out                              | ⏳ pending     |
 | Verification flow (employer reviews shifts) | ⏳ pending     |
 | Payment calculation + recording             | ⏳ pending     |

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import {
   Briefcase,
   ChevronLeft,
+  ChevronRight,
   Clock,
   Coins,
   UserPlus,
@@ -116,26 +117,50 @@ export default async function GroupDetailPage({
         </CardHeader>
         <CardBody className="pt-0">
           <ul className="divide-y divide-border">
-            {members?.map((m) => (
-              <li
-                key={m.id}
-                className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0"
-              >
-                <div className="flex min-w-0 items-center gap-3">
-                  <Avatar name={m.display_name ?? "?"} size="sm" />
-                  <span className="truncate text-sm">
-                    {m.display_name ?? (
-                      <span className="text-muted-foreground italic">
-                        sin nombre
-                      </span>
+            {members?.map((m) => {
+              const inner = (
+                <>
+                  <div className="flex min-w-0 items-center gap-3">
+                    <Avatar name={m.display_name ?? "?"} size="sm" />
+                    <span className="truncate text-sm">
+                      {m.display_name ?? (
+                        <span className="text-muted-foreground italic">
+                          sin nombre
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={m.role === "employer" ? "accent" : "muted"}>
+                      {m.role === "employer" ? "Empleador" : "Empleado"}
+                    </Badge>
+                    {isEmployer && (
+                      <ChevronRight
+                        className="h-4 w-4 text-muted-foreground"
+                        aria-hidden
+                      />
                     )}
-                  </span>
-                </div>
-                <Badge variant={m.role === "employer" ? "accent" : "muted"}>
-                  {m.role === "employer" ? "Empleador" : "Empleado"}
-                </Badge>
-              </li>
-            ))}
+                  </div>
+                </>
+              );
+
+              return (
+                <li key={m.id}>
+                  {isEmployer ? (
+                    <Link
+                      href={`/app/groups/${id}/members/${m.id}`}
+                      className="-mx-2 flex items-center justify-between gap-3 rounded-md px-2 py-3 transition-colors first:mt-0 hover:bg-surface-muted"
+                    >
+                      {inner}
+                    </Link>
+                  ) : (
+                    <div className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
+                      {inner}
+                    </div>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         </CardBody>
       </Card>
