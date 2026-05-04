@@ -35,10 +35,14 @@ export default async function AppLayout({
           </Link>
 
           <div className="flex items-center gap-3">
-            <div className="hidden items-center gap-2 sm:flex">
+            <Link
+              href="/app/me"
+              className="hidden items-center gap-2 rounded-md px-1.5 py-1 transition-colors hover:bg-surface-muted sm:flex"
+              title="Tu perfil"
+            >
               <Avatar name={fullName} size="sm" />
               <span className="text-sm text-foreground">{fullName}</span>
-            </div>
+            </Link>
             <form action="/auth/signout" method="post">
               <button
                 type="submit"

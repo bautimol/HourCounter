@@ -13,25 +13,29 @@ const PAYMENT_PERIODS = [
 ] as const;
 type PaymentPeriod = (typeof PAYMENT_PERIODS)[number];
 
+const FIXED_FREQUENCIES = [
+  "per_period",
+  "per_day_worked",
+  "every_n_days",
+  "one_shot",
+] as const;
+type FixedFrequency = (typeof FIXED_FREQUENCIES)[number];
+
 export async function updateMemberAction(
   groupId: string,
   memberId: string,
   _prevState: MemberEditState,
   formData: FormData,
 ): Promise<MemberEditState> {
-  const displayName = String(formData.get("display_name") ?? "").trim();
+  const nickname = String(formData.get("nickname") ?? "").trim();
+  const notes = String(formData.get("notes") ?? "").trim();
   const positionRaw = String(formData.get("position_id") ?? "").trim();
   const positionId = positionRaw === "" ? null : positionRaw;
 
-  if (!displayName) return { error: "El nombre es obligatorio" };
-
-  // Each "*_overridden" hidden field is present iff the user toggled the
-  // override on. When absent, we send NULL to the DB (inherit from position).
   const rateOn = formData.get("hourly_rate_overridden") === "1";
   const periodOn = formData.get("payment_period_overridden") === "1";
   const currencyOn = formData.get("currency_overridden") === "1";
 
-  // Sanity: an ad-hoc employee (no position) must have rate + period set.
   if (positionId === null && (!rateOn || !periodOn)) {
     return {
       error:
@@ -74,45 +78,75 @@ export async function updateMemberAction(
     }
   }
 
-  const supabase = await createClient();
+  // Parse the parallel fixed-amounts arrays (same shape as position-form).
+  const descriptions = formData.getAll("fixed_description").map(String);
+  const amounts = formData.getAll("fixed_amount").map(String);
+  const frequencies = formData.getAll("fixed_frequency").map(String);
+  const customDaysList = formData.getAll("fixed_custom_days").map(String);
 
-  // Update member display name.
-  const { error: memberError } = await supabase
-    .from("group_members")
-    .update({ display_name: displayName })
-    .eq("id", memberId)
-    .eq("group_id", groupId);
-
-  if (memberError) {
-    return { error: memberError.message };
+  if (
+    descriptions.length !== amounts.length ||
+    descriptions.length !== frequencies.length ||
+    descriptions.length !== customDaysList.length
+  ) {
+    return { error: "Datos de montos fijos inconsistentes" };
   }
 
-  // Upsert employee_profile. We look it up by member; if missing we insert.
-  const { data: existing } = await supabase
-    .from("employee_profiles")
-    .select("id")
-    .eq("group_member_id", memberId)
-    .maybeSingle();
+  const fixedAmounts: {
+    description: string;
+    amount: number;
+    frequency: FixedFrequency;
+    custom_days: number | null;
+  }[] = [];
 
-  const profilePayload = {
-    position_id: positionId,
-    hourly_rate: hourlyRate,
-    payment_period: paymentPeriod,
-    custom_period_days: customPeriodDays,
-    currency,
-  };
+  for (let i = 0; i < descriptions.length; i++) {
+    const desc = descriptions[i]!.trim();
+    if (!desc) continue;
+    const amt = Number(amounts[i]);
+    const freq = frequencies[i] as FixedFrequency;
+    if (!Number.isFinite(amt)) {
+      return { error: `Monto inválido en "${desc}"` };
+    }
+    if (!FIXED_FREQUENCIES.includes(freq)) {
+      return { error: `Frecuencia inválida en "${desc}"` };
+    }
+    let cd: number | null = null;
+    if (freq === "every_n_days") {
+      const raw = customDaysList[i]!.trim();
+      cd = Number(raw);
+      if (!Number.isInteger(cd) || cd <= 0) {
+        return { error: `Cantidad de días inválida en "${desc}"` };
+      }
+    }
+    fixedAmounts.push({
+      description: desc,
+      amount: amt,
+      frequency: freq,
+      custom_days: cd,
+    });
+  }
 
-  if (existing) {
-    const { error } = await supabase
-      .from("employee_profiles")
-      .update(profilePayload)
-      .eq("id", existing.id);
-    if (error) return { error: error.message };
-  } else {
-    const { error } = await supabase
-      .from("employee_profiles")
-      .insert({ group_member_id: memberId, ...profilePayload });
-    if (error) return { error: error.message };
+  const supabase = await createClient();
+
+  const { error } = await supabase.rpc("update_member_full", {
+    target_member_id: memberId,
+    new_nickname: nickname || null,
+    new_position_id: positionId,
+    new_hourly_rate: hourlyRate,
+    new_payment_period: paymentPeriod,
+    new_custom_period_days: customPeriodDays,
+    new_currency: currency,
+    new_notes: notes || null,
+    new_fixed_amounts: fixedAmounts.map((fa) => ({
+      description: fa.description,
+      amount: fa.amount,
+      frequency: fa.frequency,
+      custom_days: fa.custom_days,
+    })),
+  });
+
+  if (error) {
+    return { error: error.message };
   }
 
   revalidatePath(`/app/groups/${groupId}/members/${memberId}`);

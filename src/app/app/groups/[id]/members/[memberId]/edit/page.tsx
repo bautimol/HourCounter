@@ -81,8 +81,35 @@ export default async function EditMemberPage({
     currency: p.currency,
   }));
 
+  // Nickname is per-viewer; load only the current employer's row.
+  const { data: nicknameRow } = await supabase
+    .from("member_nicknames")
+    .select("nickname")
+    .eq("viewer_user_id", user!.id)
+    .eq("target_member_id", memberId)
+    .maybeSingle();
+
+  // Notes + fixed amounts only exist if the profile does.
+  const { data: notesRow } = profile
+    ? await supabase
+        .from("employee_notes")
+        .select("notes")
+        .eq("employee_profile_id", profile.id)
+        .maybeSingle()
+    : { data: null };
+
+  const { data: fixedAmountRows } = profile
+    ? await supabase
+        .from("fixed_amounts")
+        .select("description, amount, frequency, custom_days")
+        .eq("employee_profile_id", profile.id)
+        .order("created_at", { ascending: true })
+    : { data: [] };
+
   const initial: MemberEditInitial = {
     displayName: member.display_name ?? "",
+    nickname: nicknameRow?.nickname ?? "",
+    notes: notesRow?.notes ?? "",
     positionId: profile?.position_id ?? null,
     hourlyRateOverride:
       profile?.hourly_rate != null ? String(profile.hourly_rate) : "",
@@ -92,6 +119,12 @@ export default async function EditMemberPage({
         ? String(profile.custom_period_days)
         : "",
     currencyOverride: profile?.currency ?? "",
+    fixedAmounts: (fixedAmountRows ?? []).map((fa) => ({
+      description: fa.description,
+      amount: String(fa.amount),
+      frequency: fa.frequency,
+      customDays: fa.custom_days != null ? String(fa.custom_days) : "",
+    })),
   };
 
   const action = updateMemberAction.bind(null, id, memberId);

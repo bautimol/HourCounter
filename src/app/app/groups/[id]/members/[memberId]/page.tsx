@@ -1,6 +1,13 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ChevronLeft, Coins, Pencil, ScrollText } from "lucide-react";
+import {
+  ChevronLeft,
+  Coins,
+  FileText,
+  Pencil,
+  ScrollText,
+  Settings,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -64,7 +71,16 @@ export default async function MemberDetailPage({
 
   if (!member) notFound();
 
-  // For employee members, load profile + effective values + fixed amounts.
+  // Per-viewer nickname (only this employer sees it).
+  const { data: nicknameRow } = await supabase
+    .from("member_nicknames")
+    .select("nickname")
+    .eq("viewer_user_id", user!.id)
+    .eq("target_member_id", memberId)
+    .maybeSingle();
+  const nickname = nicknameRow?.nickname ?? null;
+  const titleName = nickname ?? member.display_name ?? "Empleado";
+
   let profile: {
     id: string;
     position_id: string | null;
@@ -78,6 +94,7 @@ export default async function MemberDetailPage({
     frequency: string;
     custom_days: number | null;
   }[] = [];
+  let notes: string | null = null;
 
   if (member.role === "employee") {
     const { data: profileRow } = await supabase
@@ -110,6 +127,14 @@ export default async function MemberDetailPage({
         .order("created_at", { ascending: true });
 
       fixedAmounts = fas ?? [];
+
+      const { data: notesRow } = await supabase
+        .from("employee_notes")
+        .select("notes")
+        .eq("employee_profile_id", profileRow.id)
+        .maybeSingle();
+
+      notes = notesRow?.notes ?? null;
     }
   }
 
@@ -125,13 +150,16 @@ export default async function MemberDetailPage({
 
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-center gap-4">
-          <Avatar name={member.display_name ?? "?"} size="lg" />
+          <Avatar name={titleName} size="lg" />
           <div className="min-w-0">
             <h1 className="text-2xl font-semibold tracking-tight">
-              {member.display_name ?? (
-                <span className="italic text-muted-foreground">sin nombre</span>
-              )}
+              {titleName}
             </h1>
+            {nickname && member.display_name && (
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Nombre real: {member.display_name}
+              </p>
+            )}
             <div className="mt-1 flex flex-wrap items-center gap-2">
               <Badge variant={member.role === "employer" ? "accent" : "muted"}>
                 {member.role === "employer" ? "Empleador" : "Empleado"}
@@ -152,8 +180,17 @@ export default async function MemberDetailPage({
             href={`/app/groups/${id}/members/${memberId}/edit`}
             className="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-1.5 text-xs text-foreground hover:bg-surface-muted"
           >
-            <Pencil className="h-3.5 w-3.5" aria-hidden />
-            Editar
+            {profile ? (
+              <>
+                <Pencil className="h-3.5 w-3.5" aria-hidden />
+                Editar
+              </>
+            ) : (
+              <>
+                <Settings className="h-3.5 w-3.5" aria-hidden />
+                Configurar perfil
+              </>
+            )}
           </Link>
         )}
       </div>
@@ -235,11 +272,38 @@ export default async function MemberDetailPage({
               )}
             </CardBody>
           </Card>
+
+          {notes && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText
+                    className="h-4 w-4 text-muted-foreground"
+                    aria-hidden
+                  />
+                  Notas
+                </CardTitle>
+              </CardHeader>
+              <CardBody className="pt-0">
+                <p className="whitespace-pre-wrap text-sm text-foreground">
+                  {notes}
+                </p>
+                <p className="mt-3 text-xs text-muted-foreground">
+                  Visibles para los empleadores del grupo. El empleado no las
+                  ve.
+                </p>
+              </CardBody>
+            </Card>
+          )}
         </>
       ) : member.role === "employee" ? (
         <Card className="border-dashed">
           <p className="px-5 py-6 text-center text-sm text-muted-foreground">
-            Este empleado todavía no tiene perfil de pago configurado.
+            Este empleado todavía no tiene perfil de pago configurado. Tocá
+            <strong className="mx-1 font-medium text-foreground">
+              Configurar perfil
+            </strong>
+            para asignarle un rol o cargar valores manuales.
           </p>
         </Card>
       ) : null}

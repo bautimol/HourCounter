@@ -110,6 +110,7 @@ HourCounter/
 │   │   ├── app/                    authenticated area
 │   │   │   ├── layout.tsx          header + auth guard
 │   │   │   ├── page.tsx            list of user's groups
+│   │   │   ├── me/                 self-service display name editor
 │   │   │   └── groups/
 │   │   │       ├── new/            create group
 │   │   │       └── [id]/
@@ -153,7 +154,8 @@ HourCounter/
 │       ├── 0004_invitations.sql           create/get/accept invitation fns
 │       ├── 0005_positions.sql             positions + position_fixed_amounts + override fields on employee_profiles
 │       ├── 0006_fixed_amount_custom_days.sql  every_n_days frequency
-│       └── 0007_position_management.sql   update_position() + delete_position()
+│       ├── 0007_position_management.sql   update_position() + delete_position()
+│       └── 0008_member_extras.sql         employee_notes, member_nicknames, update_member_full(), update_my_display_name()
 ├── .env.local                      Supabase URL + anon key (gitignored)
 ├── .env.local.example              template
 ├── package.json
@@ -174,8 +176,10 @@ HourCounter/
 | Positions: list + create + view             | ✅ done        |
 | Positions: edit                             | ✅ done        |
 | Positions: delete (blocked while in use)    | ✅ done        |
-| Employee profile editor (scalar overrides)  | ✅ done        |
-| Employee profile editor (fixed amounts)     | ⏳ pending     |
+| Employee profile editor (overrides + fixed amounts) | ✅ done |
+| Per-viewer member nicknames                 | ✅ done        |
+| Employer-shared notes per employee          | ✅ done        |
+| Self-service display name (/app/me)         | ✅ done        |
 | Clock in / out                              | ⏳ pending     |
 | Verification flow (employer reviews shifts) | ⏳ pending     |
 | Payment calculation + recording             | ⏳ pending     |

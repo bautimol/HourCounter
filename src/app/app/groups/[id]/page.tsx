@@ -64,6 +64,22 @@ export default async function GroupDetailPage({
     .eq("status", "active")
     .order("joined_at", { ascending: true });
 
+  // Per-viewer nicknames: load only mine for the members of this group.
+  const memberIds = (members ?? []).map((m) => m.id);
+  const { data: nicknameRows } =
+    memberIds.length > 0
+      ? await supabase
+          .from("member_nicknames")
+          .select("target_member_id, nickname")
+          .eq("viewer_user_id", user!.id)
+          .in("target_member_id", memberIds)
+      : { data: [] };
+
+  const nicknameByMember = new Map<string, string>();
+  for (const row of nicknameRows ?? []) {
+    nicknameByMember.set(row.target_member_id, row.nickname);
+  }
+
   const isEmployer = myMembership?.role === "employer";
   const memberCount = members?.length ?? 0;
 
@@ -123,17 +139,26 @@ export default async function GroupDetailPage({
         <CardBody className="pt-0">
           <ul className="divide-y divide-border">
             {members?.map((m) => {
+              const nick = nicknameByMember.get(m.id);
+              const shownName = nick ?? m.display_name;
               const inner = (
                 <>
                   <div className="flex min-w-0 items-center gap-3">
-                    <Avatar name={m.display_name ?? "?"} size="sm" />
-                    <span className="truncate text-sm">
-                      {m.display_name ?? (
-                        <span className="text-muted-foreground italic">
-                          sin nombre
-                        </span>
+                    <Avatar name={shownName ?? "?"} size="sm" />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm">
+                        {shownName ?? (
+                          <span className="text-muted-foreground italic">
+                            sin nombre
+                          </span>
+                        )}
+                      </p>
+                      {nick && m.display_name && nick !== m.display_name && (
+                        <p className="truncate text-xs text-muted-foreground">
+                          {m.display_name}
+                        </p>
                       )}
-                    </span>
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant={m.role === "employer" ? "accent" : "muted"}>
