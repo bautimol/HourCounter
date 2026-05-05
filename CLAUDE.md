@@ -164,7 +164,8 @@ HourCounter/
 │   │   ├── invite/[code]/          public invitation landing
 │   │   ├── globals.css             design tokens
 │   │   ├── layout.tsx              root: html/body, fonts
-│   │   └── page.tsx                redirect to /app or /login
+│   │   └── page.tsx                marketing landing for non-logged users
+│   │                                (logged-in users get redirect → /app)
 │   ├── components/
 │   │   ├── ui/                     reusable primitives
 │   │   │   ├── avatar.tsx          initials in colored circle
@@ -173,6 +174,14 @@ HourCounter/
 │   │   │   ├── card.tsx            Card/Header/Title/Body/Footer
 │   │   │   ├── input.tsx           Input + Label + Field + Hint + ErrorMessage
 │   │   │   └── select.tsx
+│   │   ├── landing/                marketing landing pieces
+│   │   │   ├── landing-navbar.tsx  transparent morph-on-scroll nav
+│   │   │   ├── marquee-3d.tsx      tilted 3D marquee of mock UI cards
+│   │   │   ├── mock-cards.tsx      static product UI snippets used in marquee
+│   │   │   └── features-grid.tsx   in-view animated feature grid
+│   │   ├── navbar.tsx              authenticated app navbar (resizable)
+│   │   ├── page-header.tsx         breadcrumbs + title + actions
+│   │   ├── motion-list.tsx         staggered fade-in list
 │   │   └── submit-button.tsx       form-aware button (useFormStatus)
 │   ├── lib/
 │   │   ├── cn.ts                   clsx + tailwind-merge
@@ -231,6 +240,7 @@ HourCounter/
 | Multi-employer per group (UI)               | ⏳ schema OK, UI pending |
 | Archive employee                            | ⏳ schema OK, UI pending |
 | Generated TypeScript types from schema      | ⏳ pending     |
+| Marketing landing at `/` (3D marquee, hero, features) | ✅ done |
 
 ## Conventions
 
