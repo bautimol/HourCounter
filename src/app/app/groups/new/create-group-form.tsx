@@ -29,7 +29,6 @@ export function CreateGroupForm() {
           required
           maxLength={80}
           autoFocus
-          placeholder="ej. Mi negocio"
         />
       </Field>
 

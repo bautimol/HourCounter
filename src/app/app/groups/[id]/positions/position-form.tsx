@@ -111,7 +111,6 @@ export function PositionForm({
           required
           maxLength={80}
           autoFocus
-          placeholder="ej. Cajero"
           defaultValue={initial?.name ?? ""}
         />
       </Field>
@@ -172,7 +171,6 @@ export function PositionForm({
               min="1"
               step="1"
               required
-              placeholder="ej. 10"
               defaultValue={initial?.customPeriodDays ?? ""}
             />
           </Field>

@@ -163,7 +163,6 @@ export function MemberEditForm({
           name="nickname"
           maxLength={120}
           defaultValue={initial.nickname}
-          placeholder="ej. Juancito, Cocinero turno tarde…"
         />
         <Hint>
           Este apodo lo ves solo vos. Otros empleadores y el empleado siguen
@@ -308,7 +307,6 @@ export function MemberEditForm({
           name="notes"
           rows={4}
           defaultValue={initial.notes}
-          placeholder="ej. Prefiere turnos matutinos. No trabaja los lunes."
           className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm placeholder:text-muted-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
         />
         <Hint>El empleado no ve estas notas. Otros empleadores sí.</Hint>

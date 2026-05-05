@@ -8,10 +8,10 @@ Dashboard multi-empleador para tracking de horas trabajadas y cálculo automáti
 
 - **Grupos** — cada grupo tiene 1+ empleadores y N empleados. Una persona puede ser empleado en un grupo y empleador en otro.
 - **Roles** (positions) — plantilla de empleado (tarifa por hora, período de pago, montos fijos). Los empleados heredan los valores del rol salvo que el empleador los sobrescriba caso a caso.
+- **Clock in / out** — el empleado abre y cierra turnos desde la página del grupo, con timer en vivo. Opcional: declarar cuántas horas va a trabajar y el sistema cierra el turno solo al cumplirse el tiempo. Mientras el empleador no verifique, el empleado puede editar su turno (clock_out + notas).
 - **Membresías** — la relación usuario ↔ grupo define el rol (empleador / empleado) y un `display_name` que el propio usuario controla.
 - **Apodos** — cada empleador puede ponerle un apodo privado a cualquier miembro; solo lo ve quien lo escribió.
 - **Notas** — los empleadores comparten notas sobre cada empleado (no las ve el empleado).
-- **Clock in / out** *(pendiente)* — los empleados van a registrar horas, con flag `needs_review` para turnos sin cerrar.
 - **Cálculo de pago** *(pendiente)* — al pagar, suma horas × tarifa + montos fijos del período + ajustes one-shot.
 - **Empleado retirado** — se archiva (no se borra), el historial se conserva.
 
@@ -26,7 +26,9 @@ Dashboard multi-empleador para tracking de horas trabajadas y cálculo automáti
 | Editor de empleado: rol, overrides, montos fijos | ✅ |
 | Apodos privados + notas compartidas entre empleadores | ✅ |
 | Edición del propio nombre desde `/app/me` | ✅ |
-| Clock in / out | ⏳ |
+| Clock in / out (lado empleado, con timer en vivo y autocierre opcional) | ✅ |
+| Editar un turno propio antes de la verificación | ✅ |
+| Indicador "Trabajando" en vivo en la lista de miembros | ✅ |
 | Verificación de turnos | ⏳ |
 | Cálculo y registro de pagos | ⏳ |
 | Notificaciones push (PWA) | ⏳ |
@@ -65,7 +67,9 @@ src/app/
 │   └── groups/[id]/
 │       ├── invite/            generar invitaciones
 │       ├── members/[id]/      detalle + editor de empleado
-│       └── positions/[id]/    detalle + editor de rol
+│       ├── positions/[id]/    detalle + editor de rol
+│       ├── clock/             clock card (in/out + cronómetro vivo)
+│       └── shifts/[id]/edit/  editar un turno propio antes de verificarse
 ├── auth/                      callbacks (confirm, signout)
 └── invite/[code]/             landing pública de invitación
 

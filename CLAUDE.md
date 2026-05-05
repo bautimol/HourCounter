@@ -115,6 +115,16 @@ read policy (which lets every member see profile scalars).
 10. **Proxy** (`src/proxy.ts`): refreshes Supabase session on every
     request, redirects unauthenticated users to `/login?next=...`,
     public paths are `/`, `/login`, `/signup`, `/auth/*`, `/invite/*`.
+11. **Time tracking is lazy-close**. Open shifts past their declared
+    `expected_minutes` are closed by `auto_close_expired_shifts()`,
+    invoked at the top of any read that cares about shift state and
+    inside `clock_in` / `clock_out`. Avoids needing pg_cron and keeps
+    state self-healing without scheduled jobs.
+12. **Empty employee_profiles are valid**. The position-or-complete
+    check was removed in 0009 so a member without a configured profile
+    can clock in immediately. `clock_in` auto-creates the profile on
+    first call. Effective rate stays NULL until configured; payment
+    calc must handle this.
 
 ## Repository layout
 
@@ -137,6 +147,8 @@ HourCounter/
 │   │   │           ├── members/[memberId]/
 │   │   │           │   ├── page.tsx              detail (nickname, notes, effective values)
 │   │   │           │   └── edit/                 form + RPC update_member_full
+│   │   │           ├── clock/                    employee-only clock card + recent shifts (used by group page)
+│   │   │           ├── shifts/[shiftId]/edit/    self-edit a shift before verification
 │   │   │           └── positions/
 │   │   │               ├── page.tsx              list
 │   │   │               ├── _form-parsing.ts      shared FormData parser
@@ -179,7 +191,8 @@ HourCounter/
 │       ├── 0005_positions.sql             positions + position_fixed_amounts + override fields on employee_profiles
 │       ├── 0006_fixed_amount_custom_days.sql  every_n_days frequency
 │       ├── 0007_position_management.sql   update_position() + delete_position()
-│       └── 0008_member_extras.sql         employee_notes, member_nicknames, update_member_full(), update_my_display_name()
+│       ├── 0008_member_extras.sql         employee_notes, member_nicknames, update_member_full(), update_my_display_name()
+│       └── 0009_time_tracking.sql         drops profile-completeness check, adds time_entries.expected_minutes + one-open-shift unique index, RPCs clock_in/clock_out/auto_close_expired_shifts/update_my_time_entry
 ├── .env.local                      Supabase URL + anon key (gitignored)
 ├── .env.local.example              template
 ├── package.json
@@ -204,7 +217,12 @@ HourCounter/
 | Per-viewer member nicknames                 | ✅ done        |
 | Employer-shared notes per employee          | ✅ done        |
 | Self-service display name (/app/me)         | ✅ done        |
-| Clock in / out                              | ⏳ pending     |
+| Clock in / out (employee side)              | ✅ done        |
+| Auto-close after expected_minutes (lazy)    | ✅ done        |
+| Self-edit unverified shifts                 | ✅ done        |
+| Today's worked hours (live)                 | ✅ done        |
+| "Trabajando" indicator on members list      | ✅ done        |
+| Global clock-out banner on /app             | ⏳ pending     |
 | Verification flow (employer reviews shifts) | ⏳ pending     |
 | Payment calculation + recording             | ⏳ pending     |
 | Payment adjustments (one-shot)              | ⏳ pending     |
@@ -226,6 +244,11 @@ HourCounter/
 - **Forms**: `useActionState` for state, `<SubmitButton>` for the
   submit button (handles pending state). Hidden inputs (`<input
   type="hidden" name="next" value={next}>`) for passing extra context.
+  Avoid `placeholder="ej. ..."` examples — labels and `<Hint>` are the
+  documentation, placeholders should be empty or strictly functional.
+- **Buttons**: three sizes (`sm`/`md`/`lg`). Use `lg` for prominent
+  CTAs (clock in/out style). Add `rounded-xl shadow-lg shadow-<color>/20`
+  via className for the "premium" feel reserved for hero actions.
 - **Server action redirects**: `redirect()` from `next/navigation`. To
   invalidate caches before redirect: `revalidatePath('/...')`.
 - **RLS**: never rely on app-layer auth. Always assume the anon key is

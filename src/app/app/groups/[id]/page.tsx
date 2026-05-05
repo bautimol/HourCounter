@@ -18,6 +18,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { ClockCard, type OpenShift } from "./clock/clock-card";
+import { RecentShiftsList, type RecentShift } from "./clock/recent-shifts";
+import { startOfTodayIso } from "@/lib/format";
 
 export default async function GroupDetailPage({
   params,
@@ -52,14 +55,20 @@ export default async function GroupDetailPage({
 
   const { data: myMembership } = await supabase
     .from("group_members")
-    .select("role")
+    .select("id, role")
     .eq("group_id", id)
     .eq("user_id", user!.id)
     .maybeSingle();
 
   const { data: members } = await supabase
     .from("group_members")
-    .select("id, role, display_name, joined_at, user_id")
+    .select(
+      `id, role, display_name, joined_at, user_id,
+       employee_profile:employee_profiles(
+         id,
+         position:positions(name)
+       )`,
+    )
     .eq("group_id", id)
     .eq("status", "active")
     .order("joined_at", { ascending: true });
@@ -80,8 +89,97 @@ export default async function GroupDetailPage({
     nicknameByMember.set(row.target_member_id, row.nickname);
   }
 
+  // Pull each member's profile + open shift so the row can show "trabajando".
+  const profileIds: string[] = [];
+  const profileToMember = new Map<string, string>();
+  for (const m of members ?? []) {
+    const ep = Array.isArray(m.employee_profile)
+      ? m.employee_profile[0]
+      : (m.employee_profile as { id?: string } | null);
+    if (ep?.id) {
+      profileIds.push(ep.id);
+      profileToMember.set(ep.id, m.id);
+    }
+  }
+
+  const { data: openShifts } =
+    profileIds.length > 0
+      ? await supabase
+          .from("time_entries")
+          .select("employee_profile_id, clock_in")
+          .eq("status", "open")
+          .in("employee_profile_id", profileIds)
+      : { data: [] };
+
+  const openByMember = new Map<string, { clockIn: Date }>();
+  for (const s of openShifts ?? []) {
+    const memberId = profileToMember.get(s.employee_profile_id);
+    if (memberId) {
+      openByMember.set(memberId, { clockIn: new Date(s.clock_in) });
+    }
+  }
+
   const isEmployer = myMembership?.role === "employer";
+  const isEmployee = myMembership?.role === "employee";
   const memberCount = members?.length ?? 0;
+
+  // Employee-only: fetch clock state + today's totals + recent shifts.
+  let openShift: OpenShift | null = null;
+  let recentShifts: RecentShift[] = [];
+  let closedTodayMinutes = 0;
+
+  if (isEmployee && myMembership) {
+    // Sweep any expired shifts so subsequent reads are accurate.
+    await supabase.rpc("auto_close_expired_shifts");
+
+    const { data: profile } = await supabase
+      .from("employee_profiles")
+      .select("id")
+      .eq("group_member_id", myMembership.id)
+      .maybeSingle();
+
+    if (profile) {
+      const [{ data: open }, { data: recent }, { data: todayEntries }] =
+        await Promise.all([
+          supabase
+            .from("time_entries")
+            .select("id, clock_in, expected_minutes")
+            .eq("employee_profile_id", profile.id)
+            .eq("status", "open")
+            .maybeSingle(),
+          supabase
+            .from("time_entries")
+            .select(
+              "id, clock_in, clock_out, status, notes, verified_at, expected_minutes",
+            )
+            .eq("employee_profile_id", profile.id)
+            .order("clock_in", { ascending: false })
+            .limit(10),
+          supabase
+            .from("time_entries")
+            .select("clock_in, clock_out, status")
+            .eq("employee_profile_id", profile.id)
+            .gte("clock_in", startOfTodayIso()),
+        ]);
+
+      openShift = open
+        ? {
+            id: open.id,
+            clockInIso: open.clock_in,
+            expectedMinutes: open.expected_minutes,
+          }
+        : null;
+
+      recentShifts = (recent ?? []) as RecentShift[];
+
+      closedTodayMinutes = (todayEntries ?? []).reduce<number>((sum, e) => {
+        if (e.status === "open" || !e.clock_out) return sum;
+        const ms =
+          new Date(e.clock_out).getTime() - new Date(e.clock_in).getTime();
+        return sum + Math.max(0, Math.floor(ms / 60_000));
+      }, 0);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -129,71 +227,120 @@ export default async function GroupDetailPage({
         </nav>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-4 w-4 text-muted-foreground" aria-hidden />
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            <Users className="h-4 w-4" aria-hidden />
             Miembros
-          </CardTitle>
-        </CardHeader>
-        <CardBody className="pt-0">
-          <ul className="divide-y divide-border">
-            {members?.map((m) => {
-              const nick = nicknameByMember.get(m.id);
-              const shownName = nick ?? m.display_name;
-              const inner = (
-                <>
-                  <div className="flex min-w-0 items-center gap-3">
-                    <Avatar name={shownName ?? "?"} size="sm" />
-                    <div className="min-w-0">
-                      <p className="truncate text-sm">
-                        {shownName ?? (
-                          <span className="text-muted-foreground italic">
-                            sin nombre
-                          </span>
-                        )}
-                      </p>
-                      {nick && m.display_name && nick !== m.display_name && (
-                        <p className="truncate text-xs text-muted-foreground">
-                          {m.display_name}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant={m.role === "employer" ? "accent" : "muted"}>
-                      {m.role === "employer" ? "Empleador" : "Empleado"}
-                    </Badge>
-                    {isEmployer && (
-                      <ChevronRight
-                        className="h-4 w-4 text-muted-foreground"
-                        aria-hidden
-                      />
-                    )}
-                  </div>
-                </>
-              );
+            <span className="rounded-full bg-surface-muted px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground">
+              {memberCount}
+            </span>
+          </h2>
+        </div>
 
-              return (
-                <li key={m.id}>
-                  {isEmployer ? (
-                    <Link
-                      href={`/app/groups/${id}/members/${m.id}`}
-                      className="-mx-2 flex items-center justify-between gap-3 rounded-md px-2 py-3 transition-colors first:mt-0 hover:bg-surface-muted"
-                    >
-                      {inner}
-                    </Link>
-                  ) : (
-                    <div className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
-                      {inner}
-                    </div>
+        <ul className="grid gap-2.5">
+          {members?.map((m) => {
+            const nick = nicknameByMember.get(m.id);
+            const shownName = nick ?? m.display_name;
+            const realNameAside =
+              nick && m.display_name && nick !== m.display_name
+                ? m.display_name
+                : null;
+
+            const ep = Array.isArray(m.employee_profile)
+              ? m.employee_profile[0]
+              : (m.employee_profile as
+                  | { position?: { name?: string } | { name?: string }[] | null }
+                  | null);
+            const positionRaw = ep?.position;
+            const positionName = positionRaw
+              ? Array.isArray(positionRaw)
+                ? positionRaw[0]?.name
+                : positionRaw.name
+              : null;
+
+            const open = openByMember.get(m.id);
+            const subtitleParts: string[] = [];
+            if (positionName) subtitleParts.push(positionName);
+            if (realNameAside) subtitleParts.push(realNameAside);
+
+            const inner = (
+              <>
+                <Avatar name={shownName ?? "?"} size="md" />
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <p className="truncate text-sm font-medium text-foreground">
+                      {shownName ?? (
+                        <span className="italic text-muted-foreground">
+                          sin nombre
+                        </span>
+                      )}
+                    </p>
+                    {open && <OnlineDot />}
+                  </div>
+                  {subtitleParts.length > 0 && (
+                    <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                      {subtitleParts.join(" · ")}
+                    </p>
                   )}
-                </li>
-              );
-            })}
-          </ul>
-        </CardBody>
-      </Card>
+                </div>
+
+                <div className="flex shrink-0 items-center gap-2">
+                  <Badge variant={m.role === "employer" ? "accent" : "muted"}>
+                    {m.role === "employer" ? "Empleador" : "Empleado"}
+                  </Badge>
+                  {isEmployer && (
+                    <ChevronRight
+                      className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5"
+                      aria-hidden
+                    />
+                  )}
+                </div>
+              </>
+            );
+
+            const rowBase =
+              "group flex items-center gap-3.5 rounded-xl border border-border bg-surface p-3.5 transition-colors";
+            const rowInteractive =
+              "hover:border-border-strong hover:bg-surface-muted/40";
+
+            return (
+              <li key={m.id}>
+                {isEmployer ? (
+                  <Link
+                    href={`/app/groups/${id}/members/${m.id}`}
+                    className={`${rowBase} ${rowInteractive}`}
+                  >
+                    {inner}
+                  </Link>
+                ) : (
+                  <div className={rowBase}>{inner}</div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+
+      {isEmployee && (
+        <>
+          <ClockCard
+            groupId={id}
+            openShift={openShift}
+            defaultExpectedHours={null}
+            defaultExpectedExtraMinutes={null}
+            closedTodayMinutes={closedTodayMinutes}
+          />
+
+          <section className="space-y-3">
+            <h2 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Mis turnos recientes
+            </h2>
+            <RecentShiftsList groupId={id} shifts={recentShifts} />
+          </section>
+        </>
+      )}
 
       {isEmployer ? (
         <ComingSoonGrid
@@ -216,11 +363,6 @@ export default async function GroupDetailPage({
           title="Próximamente para empleados"
           items={[
             {
-              icon: <Clock className="h-4 w-4" aria-hidden />,
-              title: "Clock in / out",
-              description: "Registrá la entrada y la salida desde el celular.",
-            },
-            {
               icon: <Coins className="h-4 w-4" aria-hidden />,
               title: "Tu próximo pago",
               description: "Mirá las horas acumuladas y el monto estimado.",
@@ -229,6 +371,18 @@ export default async function GroupDetailPage({
         />
       )}
     </div>
+  );
+}
+
+function OnlineDot() {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
+      <span className="relative inline-flex h-1.5 w-1.5">
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-60" />
+        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+      </span>
+      Trabajando
+    </span>
   );
 }
 

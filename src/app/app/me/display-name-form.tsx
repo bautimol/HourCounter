@@ -33,7 +33,6 @@ export function DisplayNameForm({ current }: { current: string }) {
           required
           maxLength={120}
           defaultValue={current}
-          placeholder="ej. Juan Pérez"
         />
         <Hint>
           Es el nombre que ven los demás en los grupos donde participás. Se
