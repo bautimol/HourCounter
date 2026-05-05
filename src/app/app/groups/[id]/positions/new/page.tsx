@@ -1,13 +1,8 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
+import { Briefcase } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import {
-  Card,
-  CardBody,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardBody } from "@/components/ui/card";
+import { PageHeader } from "@/components/page-header";
 import { PositionForm } from "../position-form";
 import { createPositionAction } from "./actions";
 
@@ -45,19 +40,21 @@ export default async function NewPositionPage({
   const action = createPositionAction.bind(null, id);
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4">
-      <Link
-        href={`/app/groups/${id}/positions`}
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ChevronLeft className="h-4 w-4" aria-hidden />
-        Roles
-      </Link>
+    <div className="mx-auto max-w-2xl space-y-8">
+      <PageHeader
+        crumbs={[
+          { label: "Tus grupos", href: "/app" },
+          { label: group.name, href: `/app/groups/${id}` },
+          { label: "Roles", href: `/app/groups/${id}/positions` },
+          { label: "Nuevo rol" },
+        ]}
+        title="Nuevo rol"
+        subtitle="Definí los defaults de un puesto. Los empleados con este rol heredan tarifa y montos fijos."
+        icon={<Briefcase className="h-5 w-5" aria-hidden />}
+        accent="emerald"
+      />
 
       <Card>
-        <CardHeader>
-          <CardTitle>Nuevo rol</CardTitle>
-        </CardHeader>
         <CardBody>
           <PositionForm action={action} submitLabel="Crear rol" />
         </CardBody>

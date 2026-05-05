@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ChevronLeft, Coins, Pencil } from "lucide-react";
+import { Briefcase, Coins, Pencil } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageHeader } from "@/components/page-header";
 import {
   fixedAmountFrequencyLabel,
   formatCurrency,
@@ -73,43 +74,38 @@ export default async function PositionDetailPage({
   });
 
   return (
-    <div className="space-y-6">
-      <Link
-        href={`/app/groups/${id}/positions`}
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ChevronLeft className="h-4 w-4" aria-hidden />
-        Roles
-      </Link>
-
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            {position.name}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {formatCurrency(position.hourly_rate, position.currency)} / hora ·{" "}
-            {paymentPeriodLabel(
-              position.payment_period,
-              position.custom_period_days,
-            )}
-          </p>
-        </div>
-        <div className="flex flex-wrap items-start gap-2">
-          <Link
-            href={`/app/groups/${id}/positions/${positionId}/edit`}
-            className="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-1.5 text-xs text-foreground hover:bg-surface-muted"
-          >
-            <Pencil className="h-3.5 w-3.5" aria-hidden />
-            Editar
-          </Link>
-          <DeletePositionButton
-            groupId={id}
-            positionId={positionId}
-            positionName={position.name}
-          />
-        </div>
-      </div>
+    <div className="space-y-8">
+      <PageHeader
+        crumbs={[
+          { label: "Tus grupos", href: "/app" },
+          { label: group.name, href: `/app/groups/${id}` },
+          { label: "Roles", href: `/app/groups/${id}/positions` },
+          { label: position.name },
+        ]}
+        title={position.name}
+        subtitle={`${formatCurrency(position.hourly_rate, position.currency)} / hora · ${paymentPeriodLabel(
+          position.payment_period,
+          position.custom_period_days,
+        )}`}
+        icon={<Briefcase className="h-5 w-5" aria-hidden />}
+        accent="emerald"
+        actions={
+          <>
+            <Link
+              href={`/app/groups/${id}/positions/${positionId}/edit`}
+              className="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-1.5 text-xs text-foreground hover:bg-surface-muted"
+            >
+              <Pencil className="h-3.5 w-3.5" aria-hidden />
+              Editar
+            </Link>
+            <DeletePositionButton
+              groupId={id}
+              positionId={positionId}
+              positionName={position.name}
+            />
+          </>
+        }
+      />
 
       <Card>
         <CardHeader>

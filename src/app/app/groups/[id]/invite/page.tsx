@@ -1,8 +1,6 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ChevronLeft, Clock } from "lucide-react";
+import { Clock, UserPlus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -10,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { PageHeader } from "@/components/page-header";
 import { CreateInvitationForm } from "./create-invitation-form";
 
 export default async function InvitePage({
@@ -62,24 +61,18 @@ export default async function InvitePage({
   const origin = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
   return (
-    <div className="space-y-6">
-      <Link
-        href={`/app/groups/${id}`}
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ChevronLeft className="h-4 w-4" aria-hidden />
-        {group.name}
-      </Link>
-
-      <div className="flex items-center gap-3">
-        <Avatar name={group.name} size="lg" />
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Invitar al grupo
-          </h1>
-          <p className="text-sm text-muted-foreground">{group.name}</p>
-        </div>
-      </div>
+    <div className="space-y-8">
+      <PageHeader
+        crumbs={[
+          { label: "Tus grupos", href: "/app" },
+          { label: group.name, href: `/app/groups/${id}` },
+          { label: "Invitar" },
+        ]}
+        title="Invitar al grupo"
+        subtitle="Generá un link que sume a alguien con el rol que elijas."
+        icon={<UserPlus className="h-5 w-5" aria-hidden />}
+        accent="emerald"
+      />
 
       <Card>
         <CardHeader>

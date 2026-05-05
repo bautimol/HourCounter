@@ -1,13 +1,8 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
+import { Briefcase } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import {
-  Card,
-  CardBody,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardBody } from "@/components/ui/card";
+import { PageHeader } from "@/components/page-header";
 import {
   PositionForm,
   type PositionFormInitial,
@@ -82,19 +77,25 @@ export default async function EditPositionPage({
   const action = updatePositionAction.bind(null, id, positionId);
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4">
-      <Link
-        href={`/app/groups/${id}/positions/${positionId}`}
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ChevronLeft className="h-4 w-4" aria-hidden />
-        {position.name}
-      </Link>
+    <div className="mx-auto max-w-2xl space-y-8">
+      <PageHeader
+        crumbs={[
+          { label: "Tus grupos", href: "/app" },
+          { label: group.name, href: `/app/groups/${id}` },
+          { label: "Roles", href: `/app/groups/${id}/positions` },
+          {
+            label: position.name,
+            href: `/app/groups/${id}/positions/${positionId}`,
+          },
+          { label: "Editar" },
+        ]}
+        title={`Editar ${position.name}`}
+        subtitle="Los cambios se reflejan al instante en los empleados que heredan los valores del rol."
+        icon={<Briefcase className="h-5 w-5" aria-hidden />}
+        accent="emerald"
+      />
 
       <Card>
-        <CardHeader>
-          <CardTitle>Editar rol</CardTitle>
-        </CardHeader>
         <CardBody>
           <PositionForm
             action={action}

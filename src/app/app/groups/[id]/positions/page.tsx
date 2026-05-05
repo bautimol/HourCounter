@@ -1,13 +1,12 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { Briefcase, ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { Briefcase, ChevronRight, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import {
-  formatCurrency,
-  paymentPeriodLabel,
-} from "@/lib/format";
+import { PageHeader } from "@/components/page-header";
+import { MotionList, MotionListItem } from "@/components/motion-list";
+import { formatCurrency, paymentPeriodLabel } from "@/lib/format";
 
 export default async function PositionsListPage({
   params,
@@ -49,42 +48,37 @@ export default async function PositionsListPage({
     .order("name", { ascending: true });
 
   return (
-    <div className="space-y-6">
-      <Link
-        href={`/app/groups/${id}`}
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ChevronLeft className="h-4 w-4" aria-hidden />
-        {group.name}
-      </Link>
-
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Roles</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Plantillas de empleado del grupo (tarifa, período de pago,
-            adicionales fijos).
-          </p>
-        </div>
-        <Link href={`/app/groups/${id}/positions/new`}>
-          <Button>
-            <Plus className="h-4 w-4" aria-hidden />
-            Nuevo rol
-          </Button>
-        </Link>
-      </div>
+    <div className="space-y-8">
+      <PageHeader
+        crumbs={[
+          { label: "Tus grupos", href: "/app" },
+          { label: group.name, href: `/app/groups/${id}` },
+          { label: "Roles" },
+        ]}
+        title="Roles"
+        subtitle="Plantillas de empleado del grupo (tarifa, período de pago, adicionales fijos)."
+        icon={<Briefcase className="h-5 w-5" aria-hidden />}
+        accent="emerald"
+        actions={
+          <Link href={`/app/groups/${id}/positions/new`}>
+            <Button>
+              <Plus className="h-4 w-4" aria-hidden />
+              Nuevo rol
+            </Button>
+          </Link>
+        }
+      />
 
       {!positions || positions.length === 0 ? (
         <Card>
           <div className="flex flex-col items-center gap-3 p-10 text-center">
-            <span className="grid h-10 w-10 place-items-center rounded-full bg-surface-muted">
-              <Briefcase
-                className="h-5 w-5 text-muted-foreground"
-                aria-hidden
-              />
+            <span className="grid h-12 w-12 place-items-center rounded-full bg-accent-soft text-accent-soft-foreground">
+              <Briefcase className="h-5 w-5" aria-hidden />
             </span>
             <div>
-              <p className="font-medium">Todavía no creaste ningún rol</p>
+              <p className="text-base font-medium">
+                Todavía no creaste ningún rol
+              </p>
               <p className="mt-1 text-sm text-muted-foreground">
                 Por ejemplo: <em>Cajero</em>, <em>Cocinero</em>,{" "}
                 <em>Repartidor</em>.
@@ -99,14 +93,14 @@ export default async function PositionsListPage({
           </div>
         </Card>
       ) : (
-        <ul className="grid gap-3 sm:grid-cols-2">
+        <MotionList className="grid gap-3 sm:grid-cols-2">
           {positions.map((p) => (
-            <li key={p.id}>
+            <MotionListItem key={p.id}>
               <Link
                 href={`/app/groups/${id}/positions/${p.id}`}
                 className="block"
               >
-                <Card className="group transition-colors hover:border-border-strong hover:bg-surface-muted/40">
+                <Card className="group transition-all duration-200 hover:border-border-strong hover:bg-surface-muted/40 hover:shadow-md hover:shadow-black/5">
                   <div className="flex items-center justify-between gap-3 p-4">
                     <div className="min-w-0 space-y-1">
                       <p className="truncate font-medium">{p.name}</p>
@@ -125,9 +119,9 @@ export default async function PositionsListPage({
                   </div>
                 </Card>
               </Link>
-            </li>
+            </MotionListItem>
           ))}
-        </ul>
+        </MotionList>
       )}
     </div>
   );

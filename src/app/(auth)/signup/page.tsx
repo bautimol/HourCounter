@@ -1,11 +1,4 @@
 import Link from "next/link";
-import {
-  Card,
-  CardBody,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { SignupForm } from "./signup-form";
 
 export default async function SignupPage({
@@ -19,20 +12,17 @@ export default async function SignupPage({
     : "/login";
 
   return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>Crear cuenta</CardTitle>
-          <CardDescription>
-            Después vas a poder crear o unirte a un grupo
-          </CardDescription>
-        </CardHeader>
-        <CardBody>
-          <SignupForm next={next} />
-        </CardBody>
-      </Card>
+    <div className="space-y-8">
+      <div className="space-y-1.5">
+        <h1 className="text-3xl font-semibold tracking-tight">Crear cuenta</h1>
+        <p className="text-sm text-muted-foreground">
+          Después vas a poder crear o unirte a un grupo.
+        </p>
+      </div>
 
-      <p className="text-center text-sm text-muted-foreground">
+      <SignupForm next={next} />
+
+      <p className="text-sm text-muted-foreground">
         ¿Ya tenés cuenta?{" "}
         <Link
           href={loginHref}

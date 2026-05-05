@@ -1,12 +1,7 @@
-import Link from "next/link";
-import { ChevronLeft, User2 } from "lucide-react";
+import { User2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import {
-  Card,
-  CardBody,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardBody } from "@/components/ui/card";
+import { PageHeader } from "@/components/page-header";
 import { DisplayNameForm } from "./display-name-form";
 
 export default async function MyProfilePage() {
@@ -31,22 +26,16 @@ export default async function MyProfilePage() {
     "";
 
   return (
-    <div className="mx-auto max-w-xl space-y-4">
-      <Link
-        href="/app"
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ChevronLeft className="h-4 w-4" aria-hidden />
-        Tus grupos
-      </Link>
+    <div className="mx-auto max-w-xl space-y-8">
+      <PageHeader
+        crumbs={[{ label: "Tus grupos", href: "/app" }, { label: "Tu perfil" }]}
+        title="Tu perfil"
+        subtitle="Tu nombre se actualiza en todos los grupos a la vez."
+        icon={<User2 className="h-5 w-5" aria-hidden />}
+        accent="emerald"
+      />
 
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User2 className="h-4 w-4 text-muted-foreground" aria-hidden />
-            Tu perfil
-          </CardTitle>
-        </CardHeader>
         <CardBody>
           <DisplayNameForm current={current} />
         </CardBody>
