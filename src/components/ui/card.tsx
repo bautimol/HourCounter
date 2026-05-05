@@ -1,5 +1,9 @@
 import { cn } from "@/lib/cn";
 
+/**
+ * Surface card. Subtle top-to-bottom gradient gives a hint of depth on
+ * dark mode (lit-from-above) and looks completely flat on light mode.
+ */
 export function Card({
   children,
   className,
@@ -10,7 +14,9 @@ export function Card({
   return (
     <div
       className={cn(
-        "rounded-xl border border-border bg-surface shadow-xs",
+        "rounded-2xl border border-border bg-surface shadow-xs",
+        "bg-gradient-to-b from-surface to-surface",
+        "dark:from-surface-elevated/80 dark:to-surface",
         className,
       )}
     >
@@ -26,9 +32,7 @@ export function CardHeader({
   children: React.ReactNode;
   className?: string;
 }) {
-  return (
-    <div className={cn("px-5 pt-5 pb-3", className)}>{children}</div>
-  );
+  return <div className={cn("px-5 pt-5 pb-3", className)}>{children}</div>;
 }
 
 export function CardTitle({

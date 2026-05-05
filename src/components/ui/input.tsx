@@ -11,9 +11,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
     <input
       ref={ref}
       className={cn(
-        "h-9 w-full rounded-md border border-border bg-surface px-3 text-sm",
+        "h-10 w-full rounded-lg border border-border bg-surface px-3 text-sm",
+        "shadow-xs",
         "placeholder:text-muted-foreground",
-        "focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30",
+        "transition-[border-color,box-shadow] duration-150",
+        "focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_rgb(var(--ring-color)_/_0.18)]",
         "disabled:cursor-not-allowed disabled:opacity-50",
         className,
       )}
@@ -34,7 +36,10 @@ export function Label({
   return (
     <label
       htmlFor={htmlFor}
-      className={cn("text-sm font-medium text-foreground", className)}
+      className={cn(
+        "text-sm font-medium tracking-tight text-foreground",
+        className,
+      )}
     >
       {children}
     </label>

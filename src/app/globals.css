@@ -2,38 +2,61 @@
 
 /* ----------------------------------------------------------------------------
    Design tokens
-   - Light/dark surfaces use zinc as the neutral.
-   - emerald is the brand accent (work / hours / pay).
+   - Light: subtle warm off-white (stone-tinted) for less clinical feel.
+   - Dark : near-black with high contrast surfaces, "Linear-grade" depth.
+   - Brand : emerald primary, with warm amber as a possible secondary later.
    ---------------------------------------------------------------------------- */
 :root {
-  --background: #fafaf9;       /* zinc-50 */
+  /* Surfaces */
+  --background: #fafaf7;            /* warm off-white */
   --surface: #ffffff;
-  --surface-muted: #f4f4f5;    /* zinc-100 */
-  --border: #e4e4e7;           /* zinc-200 */
-  --border-strong: #d4d4d8;    /* zinc-300 */
-  --foreground: #18181b;       /* zinc-900 */
-  --muted-foreground: #71717a; /* zinc-500 */
-  --accent: #059669;           /* emerald-600 */
+  --surface-muted: #f5f5f3;         /* warm zinc-100 */
+  --surface-elevated: #ffffff;
+  /* Lines */
+  --border: #e7e5e4;                /* stone-200 */
+  --border-strong: #d4d4d2;
+  /* Text */
+  --foreground: #0f0f12;            /* near-black */
+  --muted-foreground: #6b6f76;      /* warmer than zinc-500 */
+  /* Brand (emerald) */
+  --accent: #059669;                /* emerald-600 */
+  --accent-hover: #047857;          /* emerald-700 */
   --accent-foreground: #ffffff;
-  --accent-soft: #d1fae5;      /* emerald-100 */
-  --accent-soft-foreground: #065f46; /* emerald-800 */
-  --danger: #dc2626;           /* red-600 */
+  --accent-soft: #d1fae5;
+  --accent-soft-foreground: #064e3b;
+  /* Status */
+  --danger: #dc2626;
+  --warning: #d97706;
+  /* Effects */
+  --shadow-color: 0 0% 0%;
+  --ring-color: 5 150 105;          /* emerald-600 in r g b */
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #09090b;       /* zinc-950 */
-    --surface: #18181b;          /* zinc-900 */
-    --surface-muted: #27272a;    /* zinc-800 */
-    --border: #27272a;           /* zinc-800 */
-    --border-strong: #3f3f46;    /* zinc-700 */
-    --foreground: #fafafa;       /* zinc-50 */
-    --muted-foreground: #a1a1aa; /* zinc-400 */
-    --accent: #10b981;           /* emerald-500 */
-    --accent-foreground: #052e1a;
-    --accent-soft: #064e3b;      /* emerald-900 */
-    --accent-soft-foreground: #6ee7b7; /* emerald-300 */
-    --danger: #f87171;           /* red-400 */
+    /* Surfaces — Linear-style depth */
+    --background: #07070a;            /* deep near-black with a hint of blue */
+    --surface: #0f0f13;               /* card surface, slightly elevated */
+    --surface-muted: #17171c;         /* even more elevated */
+    --surface-elevated: #1c1c22;      /* hovered/active surface */
+    /* Lines */
+    --border: #25252c;
+    --border-strong: #3a3a44;
+    /* Text */
+    --foreground: #fafafa;
+    --muted-foreground: #9ca0a8;
+    /* Brand */
+    --accent: #10b981;                /* emerald-500 */
+    --accent-hover: #34d399;          /* emerald-400 on hover */
+    --accent-foreground: #042c1d;
+    --accent-soft: #064e3b;           /* emerald-900 */
+    --accent-soft-foreground: #6ee7b7;
+    /* Status */
+    --danger: #f87171;
+    --warning: #fbbf24;
+    /* Effects */
+    --shadow-color: 0 0% 0%;
+    --ring-color: 16 185 129;         /* emerald-500 in r g b */
   }
 }
 
@@ -41,16 +64,19 @@
   --color-background: var(--background);
   --color-surface: var(--surface);
   --color-surface-muted: var(--surface-muted);
+  --color-surface-elevated: var(--surface-elevated);
   --color-border: var(--border);
   --color-border-strong: var(--border-strong);
   --color-foreground: var(--foreground);
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent-soft: var(--accent-soft);
   --color-accent-soft-foreground: var(--accent-soft-foreground);
   --color-danger: var(--danger);
-  --font-sans: var(--font-geist-sans);
+  --color-warning: var(--warning);
+  --font-sans: var(--font-jakarta);
   --font-mono: var(--font-geist-mono);
 }
 
@@ -59,11 +85,43 @@ html {
   color: var(--foreground);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans), ui-sans-serif, system-ui, -apple-system,
+  font-family: var(--font-jakarta), ui-sans-serif, system-ui, -apple-system,
     "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-feature-settings: "ss01", "cv01", "cv02";
+}
+
+/* Headings get tighter tracking and the "ss01" stylistic set for a slightly
+   more characterful look in Plus Jakarta Sans. */
+h1, h2, h3, h4, h5, h6 {
+  letter-spacing: -0.018em;
+  font-feature-settings: "ss01", "cv01", "cv02";
+}
+
+/* All numeric content (durations, money, codes, tabular tables) lines up. */
+.tabular-nums,
+input[type="number"],
+input[type="datetime-local"],
+input[type="time"],
+input[type="date"],
+code,
+pre,
+.font-mono {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Selection */
+::selection {
+  background: rgb(var(--ring-color) / 0.25);
+  color: var(--foreground);
+}
+
+/* Cleaner default focus ring */
+*:focus-visible {
+  outline: none;
 }
