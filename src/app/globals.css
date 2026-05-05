@@ -125,3 +125,15 @@ pre,
 *:focus-visible {
   outline: none;
 }
+
+/* Hide native number-input spinners across browsers. The keyboard arrows
+   still increment / decrement; we just don't want the visual clutter
+   colliding with adornments. */
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
