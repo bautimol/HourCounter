@@ -1,14 +1,8 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
+import { Pencil } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import {
-  Card,
-  CardBody,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardBody } from "@/components/ui/card";
+import { PageHeader } from "@/components/page-header";
 import { formatShortDate, formatTimeOfDay } from "@/lib/format";
 import { EditShiftForm } from "./edit-shift-form";
 
@@ -71,22 +65,20 @@ export default async function EditShiftPage({
   const start = new Date(shift.clock_in);
 
   return (
-    <div className="mx-auto max-w-md space-y-4">
-      <Link
-        href={`/app/groups/${id}`}
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ChevronLeft className="h-4 w-4" aria-hidden />
-        {group.name}
-      </Link>
+    <div className="mx-auto max-w-md space-y-8">
+      <PageHeader
+        crumbs={[
+          { label: "Tus grupos", href: "/app" },
+          { label: group.name, href: `/app/groups/${id}` },
+          { label: "Editar turno" },
+        ]}
+        title="Editar turno"
+        subtitle={`${formatShortDate(start)} · entrada a las ${formatTimeOfDay(start)}`}
+        icon={<Pencil className="h-5 w-5" aria-hidden />}
+        accent="emerald"
+      />
 
       <Card>
-        <CardHeader>
-          <CardTitle>Editar turno</CardTitle>
-          <CardDescription>
-            {formatShortDate(start)} · entrada a las {formatTimeOfDay(start)}
-          </CardDescription>
-        </CardHeader>
         <CardBody>
           <EditShiftForm
             groupId={id}

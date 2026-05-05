@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import {
-  ChevronLeft,
   Coins,
   FileText,
   Pencil,
@@ -139,61 +138,81 @@ export default async function MemberDetailPage({
   }
 
   return (
-    <div className="space-y-6">
-      <Link
-        href={`/app/groups/${id}`}
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ChevronLeft className="h-4 w-4" aria-hidden />
-        {group.name}
-      </Link>
+    <div className="space-y-8">
+      <nav aria-label="Migajas" className="text-xs text-muted-foreground">
+        <ol className="flex flex-wrap items-center gap-1">
+          <li>
+            <Link href="/app" className="hover:text-foreground">
+              Tus grupos
+            </Link>
+          </li>
+          <li aria-hidden>/</li>
+          <li>
+            <Link
+              href={`/app/groups/${id}`}
+              className="hover:text-foreground"
+            >
+              {group.name}
+            </Link>
+          </li>
+          <li aria-hidden>/</li>
+          <li className="text-foreground">{titleName}</li>
+        </ol>
+      </nav>
 
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex items-center gap-4">
-          <Avatar name={titleName} size="lg" />
-          <div className="min-w-0">
-            <h1 className="text-2xl font-semibold tracking-tight">
-              {titleName}
-            </h1>
-            {nickname && member.display_name && (
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                Nombre real: {member.display_name}
-              </p>
-            )}
-            <div className="mt-1 flex flex-wrap items-center gap-2">
-              <Badge variant={member.role === "employer" ? "accent" : "muted"}>
-                {member.role === "employer" ? "Empleador" : "Empleado"}
-              </Badge>
-              {member.status === "archived" && (
-                <Badge variant="muted">Archivado</Badge>
+      {/* Hero card */}
+      <section className="relative overflow-hidden rounded-2xl border border-border bg-surface/70 p-6 shadow-sm shadow-black/5 backdrop-blur-sm">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -right-20 -top-20 h-60 w-60 rounded-full bg-emerald-500/10 blur-3xl"
+        />
+        <div className="relative flex flex-wrap items-start justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <Avatar name={titleName} size="lg" />
+            <div className="min-w-0">
+              <h1 className="text-2xl font-semibold tracking-tight">
+                {titleName}
+              </h1>
+              {nickname && member.display_name && (
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Nombre real: {member.display_name}
+                </p>
               )}
-              {profile?.position_name && (
-                <span className="text-xs text-muted-foreground">
-                  {profile.position_name}
-                </span>
-              )}
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <Badge variant={member.role === "employer" ? "accent" : "muted"}>
+                  {member.role === "employer" ? "Empleador" : "Empleado"}
+                </Badge>
+                {member.status === "archived" && (
+                  <Badge variant="muted">Archivado</Badge>
+                )}
+                {profile?.position_name && (
+                  <span className="text-xs text-muted-foreground">
+                    {profile.position_name}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
+          {member.role === "employee" && member.status === "active" && (
+            <Link
+              href={`/app/groups/${id}/members/${memberId}/edit`}
+              className="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-muted"
+            >
+              {profile ? (
+                <>
+                  <Pencil className="h-4 w-4" aria-hidden />
+                  Editar
+                </>
+              ) : (
+                <>
+                  <Settings className="h-4 w-4" aria-hidden />
+                  Configurar perfil
+                </>
+              )}
+            </Link>
+          )}
         </div>
-        {member.role === "employee" && member.status === "active" && (
-          <Link
-            href={`/app/groups/${id}/members/${memberId}/edit`}
-            className="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-1.5 text-xs text-foreground hover:bg-surface-muted"
-          >
-            {profile ? (
-              <>
-                <Pencil className="h-3.5 w-3.5" aria-hidden />
-                Editar
-              </>
-            ) : (
-              <>
-                <Settings className="h-3.5 w-3.5" aria-hidden />
-                Configurar perfil
-              </>
-            )}
-          </Link>
-        )}
-      </div>
+      </section>
 
       {member.role === "employee" && profile && effective ? (
         <>

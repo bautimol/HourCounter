@@ -2,7 +2,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   Briefcase,
-  ChevronLeft,
   ChevronRight,
   Clock,
   Coins,
@@ -12,12 +11,8 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardBody,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
+import { MotionList, MotionListItem } from "@/components/motion-list";
 import { ClockCard, type OpenShift } from "./clock/clock-card";
 import { RecentShiftsList, type RecentShift } from "./clock/recent-shifts";
 import { startOfTodayIso } from "@/lib/format";
@@ -182,50 +177,64 @@ export default async function GroupDetailPage({
   }
 
   return (
-    <div className="space-y-6">
-      <Link
-        href="/app"
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ChevronLeft className="h-4 w-4" aria-hidden />
-        Tus grupos
-      </Link>
+    <div className="space-y-8">
+      <nav aria-label="Migajas" className="text-xs text-muted-foreground">
+        <ol className="flex flex-wrap items-center gap-1">
+          <li>
+            <Link href="/app" className="hover:text-foreground">
+              Tus grupos
+            </Link>
+          </li>
+          <li aria-hidden>/</li>
+          <li className="text-foreground">{group.name}</li>
+        </ol>
+      </nav>
 
-      <div className="flex flex-wrap items-center gap-4">
-        <Avatar name={group.name} size="lg" />
-        <div className="min-w-0">
-          <h1 className="text-2xl font-semibold tracking-tight">
-            {group.name}
-          </h1>
-          <div className="mt-1 flex items-center gap-2">
-            <Badge variant={isEmployer ? "accent" : "muted"}>
-              {isEmployer ? "Empleador" : "Empleado"}
-            </Badge>
-            <span className="text-xs text-muted-foreground">
-              {memberCount} {memberCount === 1 ? "miembro" : "miembros"}
-            </span>
+      {/* Hero card */}
+      <section className="relative overflow-hidden rounded-2xl border border-border bg-surface/70 p-6 shadow-sm shadow-black/5 backdrop-blur-sm">
+        {/* subtle radial accent inside the hero */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -right-20 -top-20 h-60 w-60 rounded-full bg-emerald-500/10 blur-3xl"
+        />
+        <div className="relative flex flex-wrap items-start justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <Avatar name={group.name} size="lg" />
+            <div className="min-w-0">
+              <h1 className="text-2xl font-semibold tracking-tight">
+                {group.name}
+              </h1>
+              <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                <Badge variant={isEmployer ? "accent" : "muted"}>
+                  {isEmployer ? "Empleador" : "Empleado"}
+                </Badge>
+                <span className="text-xs text-muted-foreground">
+                  {memberCount} {memberCount === 1 ? "miembro" : "miembros"}
+                </span>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
 
-      {isEmployer && (
-        <nav className="flex flex-wrap gap-2">
-          <Link
-            href={`/app/groups/${id}/invite`}
-            className="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-muted"
-          >
-            <UserPlus className="h-4 w-4" aria-hidden />
-            Invitar
-          </Link>
-          <Link
-            href={`/app/groups/${id}/positions`}
-            className="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-muted"
-          >
-            <Briefcase className="h-4 w-4" aria-hidden />
-            Roles
-          </Link>
-        </nav>
-      )}
+          {isEmployer && (
+            <div className="flex flex-wrap items-center gap-2">
+              <Link
+                href={`/app/groups/${id}/invite`}
+                className="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-muted"
+              >
+                <UserPlus className="h-4 w-4" aria-hidden />
+                Invitar
+              </Link>
+              <Link
+                href={`/app/groups/${id}/positions`}
+                className="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-muted"
+              >
+                <Briefcase className="h-4 w-4" aria-hidden />
+                Roles
+              </Link>
+            </div>
+          )}
+        </div>
+      </section>
 
       <section className="space-y-3">
         <div className="flex items-center justify-between">
@@ -238,7 +247,7 @@ export default async function GroupDetailPage({
           </h2>
         </div>
 
-        <ul className="grid gap-2.5">
+        <MotionList className="grid gap-2.5">
           {members?.map((m) => {
             const nick = nicknameByMember.get(m.id);
             const shownName = nick ?? m.display_name;
@@ -306,7 +315,7 @@ export default async function GroupDetailPage({
               "hover:border-border-strong hover:bg-surface-muted/40";
 
             return (
-              <li key={m.id}>
+              <MotionListItem key={m.id} hover={false}>
                 {isEmployer ? (
                   <Link
                     href={`/app/groups/${id}/members/${m.id}`}
@@ -317,10 +326,10 @@ export default async function GroupDetailPage({
                 ) : (
                   <div className={rowBase}>{inner}</div>
                 )}
-              </li>
+              </MotionListItem>
             );
           })}
-        </ul>
+        </MotionList>
       </section>
 
       {isEmployee && (

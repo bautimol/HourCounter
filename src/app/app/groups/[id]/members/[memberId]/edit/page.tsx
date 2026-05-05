@@ -1,13 +1,8 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
+import { Settings } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import {
-  Card,
-  CardBody,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardBody } from "@/components/ui/card";
+import { PageHeader } from "@/components/page-header";
 import {
   MemberEditForm,
   type MemberEditInitial,
@@ -129,20 +124,27 @@ export default async function EditMemberPage({
 
   const action = updateMemberAction.bind(null, id, memberId);
 
+  const memberName = member.display_name ?? "Empleado";
+
   return (
-    <div className="mx-auto max-w-2xl space-y-4">
-      <Link
-        href={`/app/groups/${id}/members/${memberId}`}
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ChevronLeft className="h-4 w-4" aria-hidden />
-        {member.display_name ?? "Empleado"}
-      </Link>
+    <div className="mx-auto max-w-2xl space-y-8">
+      <PageHeader
+        crumbs={[
+          { label: "Tus grupos", href: "/app" },
+          { label: group.name, href: `/app/groups/${id}` },
+          {
+            label: memberName,
+            href: `/app/groups/${id}/members/${memberId}`,
+          },
+          { label: "Editar" },
+        ]}
+        title={`Editar ${memberName}`}
+        subtitle="Apodo, rol asignado, overrides de tarifa o período, notas y montos fijos."
+        icon={<Settings className="h-5 w-5" aria-hidden />}
+        accent="emerald"
+      />
 
       <Card>
-        <CardHeader>
-          <CardTitle>Editar empleado</CardTitle>
-        </CardHeader>
         <CardBody>
           <MemberEditForm
             action={action}

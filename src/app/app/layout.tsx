@@ -21,10 +21,27 @@ export default async function AppLayout({
 
   return (
     <div className="relative min-h-screen bg-background">
-      {/* Decorative grid background — very subtle, only at the top of pages. */}
+      {/* Soft accent glow that follows the viewport (no hard cuts). */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[420px] bg-[radial-gradient(circle_at_top,_var(--color-accent-soft)_0%,_transparent_60%)] opacity-30"
+        className="pointer-events-none fixed inset-0 z-0 opacity-25 dark:opacity-30"
+        style={{
+          background:
+            "radial-gradient(ellipse 80% 50% at 50% -10%, var(--color-accent-soft) 0%, transparent 65%)",
+        }}
+      />
+      {/* Subtle grid pattern, also viewport-fixed, very low contrast. */}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 z-0 text-foreground/40"
+        style={{
+          backgroundImage:
+            "linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px)",
+          backgroundSize: "48px 48px",
+          opacity: 0.04,
+          maskImage:
+            "radial-gradient(ellipse at center, black 50%, transparent 80%)",
+        }}
       />
 
       <AppNavbar

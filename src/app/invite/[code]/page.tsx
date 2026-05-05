@@ -41,16 +41,41 @@ export default async function InviteLandingPage({
   const inv = (data?.[0] ?? null) as Invitation | null;
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md space-y-4">
+    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-4 py-12">
+      {/* Backdrop: gradient + grid pattern + color blobs (matches auth pages) */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-br from-emerald-50 via-emerald-50 to-cyan-50 dark:from-emerald-950 dark:via-zinc-950 dark:to-emerald-950"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10 text-emerald-900/15 dark:text-emerald-300/10"
+        style={{
+          backgroundImage:
+            "linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px)",
+          backgroundSize: "36px 36px",
+          maskImage:
+            "radial-gradient(ellipse at center, black 35%, transparent 75%)",
+        }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-32 -top-32 -z-10 h-96 w-96 rounded-full bg-emerald-300/40 blur-3xl dark:bg-emerald-600/30"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -bottom-32 -left-32 -z-10 h-96 w-96 rounded-full bg-cyan-300/40 blur-3xl dark:bg-cyan-600/20"
+      />
+
+      <div className="w-full max-w-md space-y-6">
         <Link
           href="/"
           className="flex items-center justify-center gap-2 text-foreground"
         >
-          <span className="grid h-8 w-8 place-items-center rounded-lg bg-accent text-accent-foreground">
-            <Clock3 className="h-4 w-4" aria-hidden />
+          <span className="grid h-9 w-9 place-items-center rounded-lg bg-accent text-accent-foreground shadow-md shadow-emerald-700/30">
+            <Clock3 className="h-5 w-5" aria-hidden />
           </span>
-          <span className="text-lg font-semibold tracking-tight">
+          <span className="text-base font-semibold tracking-tight">
             HourCounter
           </span>
         </Link>
