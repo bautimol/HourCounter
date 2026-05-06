@@ -5,6 +5,7 @@ import {
   ChevronRight,
   Clock,
   Coins,
+  Settings as SettingsIcon,
   UserPlus,
   Users,
 } from "lucide-react";
@@ -29,7 +30,7 @@ export default async function GroupDetailPage({
 
   const { data: group, error: groupError } = await supabase
     .from("groups")
-    .select("id, name, created_at")
+    .select("id, name, avatar_url, created_at")
     .eq("id", id)
     .maybeSingle();
 
@@ -212,7 +213,7 @@ export default async function GroupDetailPage({
         />
         <div className="relative flex flex-wrap items-start justify-between gap-4">
           <div className="flex items-center gap-4">
-            <Avatar name={group.name} size="lg" />
+            <Avatar name={group.name} src={group.avatar_url} size="lg" />
             <div className="min-w-0">
               <h1 className="text-balance text-3xl font-semibold tracking-tight">
                 <span className="bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
@@ -250,6 +251,14 @@ export default async function GroupDetailPage({
               >
                 <Briefcase className="h-4 w-4" aria-hidden />
                 Roles
+              </Link>
+              <Link
+                href={`/app/groups/${id}/settings`}
+                className="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-muted"
+                title="Configuración del grupo"
+              >
+                <SettingsIcon className="h-4 w-4" aria-hidden />
+                Configuración
               </Link>
             </div>
           )}

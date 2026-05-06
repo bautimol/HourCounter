@@ -18,7 +18,9 @@ export default async function AppHomePage() {
 
   const { data: memberships, error } = await supabase
     .from("group_members")
-    .select("role, joined_at, group:groups(id, name, created_at)")
+    .select(
+      "role, joined_at, group:groups(id, name, avatar_url, created_at)",
+    )
     .eq("user_id", user!.id)
     .eq("status", "active")
     .order("joined_at", { ascending: false });
@@ -88,7 +90,14 @@ export default async function AppHomePage() {
                   <SpotlightCard tint="emerald">
                     <div className="flex items-center justify-between gap-3 p-5">
                       <div className="flex min-w-0 items-center gap-3">
-                        <Avatar name={group.name} size="lg" />
+                        <Avatar
+                          name={group.name}
+                          src={
+                            (group as { avatar_url?: string | null })
+                              .avatar_url ?? null
+                          }
+                          size="lg"
+                        />
                         <div className="min-w-0">
                           <p className="truncate text-base font-medium">
                             {group.name}

@@ -148,6 +148,7 @@ HourCounter/
 │   │   │           │   ├── page.tsx              detail (nickname, notes, effective values)
 │   │   │           │   └── edit/                 form + RPC update_member_full
 │   │   │           ├── clock/                    employee-only clock card + recent shifts (used by group page)
+│   │   │           ├── settings/                 employer-only group settings (avatar uploader)
 │   │   │           ├── shifts/[shiftId]/edit/    self-edit a shift before verification
 │   │   │           └── positions/
 │   │   │               ├── page.tsx              list
@@ -205,7 +206,8 @@ HourCounter/
 │       ├── 0007_position_management.sql   update_position() + delete_position()
 │       ├── 0008_member_extras.sql         employee_notes, member_nicknames, update_member_full(), update_my_display_name()
 │       ├── 0009_time_tracking.sql         drops profile-completeness check, adds time_entries.expected_minutes + one-open-shift unique index, RPCs clock_in/clock_out/auto_close_expired_shifts/update_my_time_entry
-│       └── 0010_avatars.sql               avatar_url column + update_my_avatar(); manual setup notes for the public `avatars` Storage bucket
+│       ├── 0010_avatars.sql               group_members.avatar_url + update_my_avatar(); manual setup notes for the public `avatars` Storage bucket
+│       └── 0011_group_avatars.sql         groups.avatar_url + update_group_avatar() (employer-gated); reuses the same `avatars` bucket under groups/<groupId>/...
 ├── .env.local                      Supabase URL + anon key (gitignored)
 ├── .env.local.example              template
 ├── package.json
@@ -231,6 +233,7 @@ HourCounter/
 | Employer-shared notes per employee          | ✅ done        |
 | Self-service display name (/app/me)         | ✅ done        |
 | Profile picture upload (`avatars` bucket)   | ✅ done        |
+| Group avatar (employer-only)                | ✅ done        |
 | Clock in / out (employee side)              | ✅ done        |
 | Auto-close after expected_minutes (lazy)    | ✅ done        |
 | Self-edit unverified shifts                 | ✅ done        |

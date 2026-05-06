@@ -3,28 +3,28 @@
 import { useActionState, useRef, useState, useTransition } from "react";
 import { Camera, Loader2, Trash2 } from "lucide-react";
 import {
-  clearMyAvatarAction,
-  updateMyAvatarAction,
-  type UpdateMyAvatarState,
+  clearGroupAvatarAction,
+  updateGroupAvatarAction,
+  type UpdateGroupAvatarState,
 } from "./actions";
 import { Avatar } from "@/components/ui/avatar";
 import { ErrorMessage } from "@/components/ui/input";
 import { cn } from "@/lib/cn";
 
-const initialState: UpdateMyAvatarState = { error: null, ok: false };
+const initialState: UpdateGroupAvatarState = { error: null, ok: false };
 
-export function AvatarUploader({
+export function GroupAvatarUploader({
+  groupId,
+  groupName,
   currentUrl,
-  name,
 }: {
+  groupId: string;
+  groupName: string;
   currentUrl: string | null;
-  name: string;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
-  const [state, formAction, isPending] = useActionState(
-    updateMyAvatarAction,
-    initialState,
-  );
+  const action = updateGroupAvatarAction.bind(null, groupId);
+  const [state, formAction, isPending] = useActionState(action, initialState);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isDeleting, startDeleteTransition] = useTransition();
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -33,14 +33,13 @@ export function AvatarUploader({
     const file = e.target.files?.[0];
     if (!file) return;
     setPreviewUrl(URL.createObjectURL(file));
-    // Submit the form right away so the user gets immediate feedback.
     e.currentTarget.form?.requestSubmit();
   }
 
   function onDelete() {
     setDeleteError(null);
     startDeleteTransition(async () => {
-      const result = await clearMyAvatarAction();
+      const result = await clearGroupAvatarAction(groupId);
       if (result.error) setDeleteError(result.error);
       else setPreviewUrl(null);
     });
@@ -52,7 +51,7 @@ export function AvatarUploader({
     <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center">
       <div className="relative">
         <Avatar
-          name={name}
+          name={groupName}
           src={shownUrl}
           size="xl"
           className={cn(
@@ -104,7 +103,7 @@ export function AvatarUploader({
         </form>
 
         <p className="text-xs text-muted-foreground">
-          PNG, JPG, WEBP o GIF · máx. 5MB
+          PNG, JPG, WEBP o GIF · máx. 5MB · la ven todos los miembros del grupo.
         </p>
 
         {state.error && <ErrorMessage>{state.error}</ErrorMessage>}

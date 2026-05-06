@@ -42,7 +42,7 @@ const ALLOWED_MIME = [
   "image/webp",
   "image/gif",
 ];
-const MAX_BYTES = 2 * 1024 * 1024; // 2MB
+const MAX_BYTES = 5 * 1024 * 1024; // 5MB
 
 export async function updateMyAvatarAction(
   _prevState: UpdateMyAvatarState,
@@ -56,7 +56,7 @@ export async function updateMyAvatarAction(
     return { error: "Formato no soportado (usá PNG, JPG, WEBP o GIF)", ok: false };
   }
   if (file.size > MAX_BYTES) {
-    return { error: "La imagen excede 2MB", ok: false };
+    return { error: "La imagen excede 5MB", ok: false };
   }
 
   const supabase = await createClient();
