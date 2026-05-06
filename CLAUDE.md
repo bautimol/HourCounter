@@ -137,8 +137,8 @@ HourCounter/
 │   │   │   └── signup/             signup page + form + action
 │   │   ├── app/                    authenticated area
 │   │   │   ├── layout.tsx          header + auth guard, links avatar to /me
-│   │   │   ├── page.tsx            list of user's groups
-│   │   │   ├── me/                 self-service display name editor
+│   │   │   ├── page.tsx            list of user's groups (SpotlightCard)
+│   │   │   ├── me/                 display name editor + avatar uploader
 │   │   │   └── groups/
 │   │   │       ├── new/            create group
 │   │   │       └── [id]/
@@ -168,12 +168,15 @@ HourCounter/
 │   │                                (logged-in users get redirect → /app)
 │   ├── components/
 │   │   ├── ui/                     reusable primitives
-│   │   │   ├── avatar.tsx          initials in colored circle
+│   │   │   ├── avatar.tsx          image-or-initials, deterministic palette
 │   │   │   ├── badge.tsx
 │   │   │   ├── button.tsx
 │   │   │   ├── card.tsx            Card/Header/Title/Body/Footer
+│   │   │   ├── copy-button.tsx     copy-to-clipboard with "Copiado" feedback
 │   │   │   ├── input.tsx           Input + Label + Field + Hint + ErrorMessage
-│   │   │   └── select.tsx
+│   │   │   ├── live-badge.tsx      pill with pulsing dot ("Trabajando")
+│   │   │   ├── select.tsx
+│   │   │   └── spotlight-card.tsx  card with cursor-tracking glow on hover
 │   │   ├── landing/                marketing landing pieces
 │   │   │   ├── landing-navbar.tsx  transparent morph-on-scroll nav
 │   │   │   ├── marquee-3d.tsx      tilted 3D marquee of mock UI cards
@@ -201,7 +204,8 @@ HourCounter/
 │       ├── 0006_fixed_amount_custom_days.sql  every_n_days frequency
 │       ├── 0007_position_management.sql   update_position() + delete_position()
 │       ├── 0008_member_extras.sql         employee_notes, member_nicknames, update_member_full(), update_my_display_name()
-│       └── 0009_time_tracking.sql         drops profile-completeness check, adds time_entries.expected_minutes + one-open-shift unique index, RPCs clock_in/clock_out/auto_close_expired_shifts/update_my_time_entry
+│       ├── 0009_time_tracking.sql         drops profile-completeness check, adds time_entries.expected_minutes + one-open-shift unique index, RPCs clock_in/clock_out/auto_close_expired_shifts/update_my_time_entry
+│       └── 0010_avatars.sql               avatar_url column + update_my_avatar(); manual setup notes for the public `avatars` Storage bucket
 ├── .env.local                      Supabase URL + anon key (gitignored)
 ├── .env.local.example              template
 ├── package.json
@@ -226,6 +230,7 @@ HourCounter/
 | Per-viewer member nicknames                 | ✅ done        |
 | Employer-shared notes per employee          | ✅ done        |
 | Self-service display name (/app/me)         | ✅ done        |
+| Profile picture upload (`avatars` bucket)   | ✅ done        |
 | Clock in / out (employee side)              | ✅ done        |
 | Auto-close after expected_minutes (lazy)    | ✅ done        |
 | Self-edit unverified shifts                 | ✅ done        |

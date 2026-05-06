@@ -26,6 +26,7 @@ Dashboard multi-empleador para tracking de horas trabajadas y cálculo automáti
 | Editor de empleado: rol, overrides, montos fijos | ✅ |
 | Apodos privados + notas compartidas entre empleadores | ✅ |
 | Edición del propio nombre desde `/app/me` | ✅ |
+| Foto de perfil (subida a Supabase Storage) | ✅ |
 | Clock in / out (lado empleado, con timer en vivo y autocierre opcional) | ✅ |
 | Editar un turno propio antes de la verificación | ✅ |
 | Indicador "Trabajando" en vivo en la lista de miembros | ✅ |

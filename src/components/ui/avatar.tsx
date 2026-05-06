@@ -1,24 +1,53 @@
 import { cn } from "@/lib/cn";
 
 /**
- * Renders the initials of a name inside a colored circle.
- * Color is derived deterministically from the name so the same person
- * always gets the same color across sessions.
+ * Renders a user's avatar. If `src` is provided we show the image with a
+ * subtle ring; otherwise we fall back to the initials of `name` over a
+ * deterministic color (so the same person always gets the same color).
  */
 export function Avatar({
   name,
+  src,
   size = "md",
   className,
 }: {
   name: string | null | undefined;
-  size?: "sm" | "md" | "lg";
+  src?: string | null;
+  size?: "sm" | "md" | "lg" | "xl";
   className?: string;
 }) {
   const safe = (name ?? "?").trim() || "?";
+  const sizeClass =
+    size === "sm"
+      ? "h-7 w-7 text-xs"
+      : size === "lg"
+        ? "h-12 w-12 text-base"
+        : size === "xl"
+          ? "h-20 w-20 text-2xl"
+          : "h-9 w-9 text-sm";
+
+  if (src) {
+    return (
+      <span
+        className={cn(
+          "inline-flex shrink-0 overflow-hidden rounded-full bg-surface-muted ring-1 ring-border",
+          sizeClass,
+          className,
+        )}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={src}
+          alt={`Foto de ${safe}`}
+          loading="lazy"
+          className="h-full w-full object-cover"
+        />
+      </span>
+    );
+  }
+
   const initials = getInitials(safe);
   const palette = pickPalette(safe);
-  const sizeClass =
-    size === "sm" ? "h-7 w-7 text-xs" : size === "lg" ? "h-12 w-12 text-base" : "h-9 w-9 text-sm";
 
   return (
     <span

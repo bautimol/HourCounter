@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { SpotlightCard } from "@/components/ui/spotlight-card";
 import { PageHeader } from "@/components/page-header";
 import { MotionList, MotionListItem } from "@/components/motion-list";
 
@@ -25,7 +26,14 @@ export default async function AppHomePage() {
   return (
     <div className="space-y-8">
       <PageHeader
-        title="Tus grupos"
+        title={
+          <span>
+            Tus{" "}
+            <span className="bg-gradient-to-r from-emerald-500 to-cyan-500 bg-clip-text text-transparent dark:from-emerald-400 dark:to-cyan-400">
+              grupos
+            </span>
+          </span>
+        }
         subtitle="Espacios donde sos empleador o empleado."
         icon={<Users className="h-5 w-5" aria-hidden />}
         accent="emerald"
@@ -77,26 +85,28 @@ export default async function AppHomePage() {
             return (
               <MotionListItem key={group.id}>
                 <Link href={`/app/groups/${group.id}`} className="block">
-                  <Card className="group transition-all duration-200 hover:border-border-strong hover:bg-surface-muted/40 hover:shadow-md hover:shadow-black/5">
-                    <div className="flex items-center justify-between gap-3 p-4">
+                  <SpotlightCard tint="emerald">
+                    <div className="flex items-center justify-between gap-3 p-5">
                       <div className="flex min-w-0 items-center gap-3">
-                        <Avatar name={group.name} />
+                        <Avatar name={group.name} size="lg" />
                         <div className="min-w-0">
-                          <p className="truncate font-medium">{group.name}</p>
+                          <p className="truncate text-base font-medium">
+                            {group.name}
+                          </p>
                           <Badge
                             variant={m.role === "employer" ? "accent" : "muted"}
-                            className="mt-1"
+                            className="mt-1.5"
                           >
                             {m.role === "employer" ? "Empleador" : "Empleado"}
                           </Badge>
                         </div>
                       </div>
                       <ChevronRight
-                        className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5"
+                        className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5"
                         aria-hidden
                       />
                     </div>
-                  </Card>
+                  </SpotlightCard>
                 </Link>
               </MotionListItem>
             );

@@ -23,9 +23,11 @@ export type NavLink = {
  */
 export function AppNavbar({
   fullName,
+  avatarUrl,
   links = [],
 }: {
   fullName: string;
+  avatarUrl?: string | null;
   links?: NavLink[];
 }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -100,7 +102,7 @@ export function AppNavbar({
             className="flex items-center gap-2 rounded-md px-1.5 py-1 transition-colors hover:bg-surface-muted"
             title="Tu perfil"
           >
-            <Avatar name={fullName} size="sm" />
+            <Avatar name={fullName} src={avatarUrl} size="sm" />
             <span className="max-w-[160px] truncate text-sm text-foreground">
               {fullName}
             </span>
@@ -157,7 +159,7 @@ export function AppNavbar({
                   onClick={() => setMobileOpen(false)}
                   className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-muted"
                 >
-                  <Avatar name={fullName} size="sm" />
+                  <Avatar name={fullName} src={avatarUrl} size="sm" />
                   {fullName}
                 </Link>
               </li>

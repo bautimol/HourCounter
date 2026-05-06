@@ -63,7 +63,9 @@ export default async function PositionDetailPage({
 
   const { data: profiles } = await supabase
     .from("employee_profiles")
-    .select("id, group_member:group_members(id, display_name, status)")
+    .select(
+      "id, group_member:group_members(id, display_name, avatar_url, status)",
+    )
     .eq("position_id", positionId);
 
   const activeProfiles = (profiles ?? []).filter((p) => {
@@ -160,22 +162,33 @@ export default async function PositionDetailPage({
                 const gm = Array.isArray(p.group_member)
                   ? p.group_member[0]
                   : p.group_member;
+                const memberId = gm?.id;
                 return (
-                  <li
-                    key={p.id}
-                    className="flex items-center gap-3 px-5 py-3"
-                  >
-                    <Avatar name={gm?.display_name ?? "?"} size="sm" />
-                    <span className="text-sm">
-                      {gm?.display_name ?? (
-                        <span className="text-muted-foreground italic">
-                          sin nombre
-                        </span>
-                      )}
-                    </span>
-                    <Badge variant="muted" className="ml-auto">
-                      Empleado
-                    </Badge>
+                  <li key={p.id}>
+                    <Link
+                      href={
+                        memberId
+                          ? `/app/groups/${id}/members/${memberId}`
+                          : "#"
+                      }
+                      className="group flex items-center gap-3 px-5 py-3 transition-colors hover:bg-surface-muted/50"
+                    >
+                      <Avatar
+                        name={gm?.display_name ?? "?"}
+                        src={gm?.avatar_url}
+                        size="sm"
+                      />
+                      <span className="text-sm">
+                        {gm?.display_name ?? (
+                          <span className="text-muted-foreground italic">
+                            sin nombre
+                          </span>
+                        )}
+                      </span>
+                      <Badge variant="muted" className="ml-auto">
+                        Empleado
+                      </Badge>
+                    </Link>
                   </li>
                 );
               })}

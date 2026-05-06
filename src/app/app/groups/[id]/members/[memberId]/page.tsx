@@ -63,7 +63,7 @@ export default async function MemberDetailPage({
 
   const { data: member } = await supabase
     .from("group_members")
-    .select("id, role, status, display_name, joined_at")
+    .select("id, role, status, display_name, avatar_url, joined_at")
     .eq("id", memberId)
     .eq("group_id", id)
     .maybeSingle();
@@ -168,10 +168,12 @@ export default async function MemberDetailPage({
         />
         <div className="relative flex flex-wrap items-start justify-between gap-4">
           <div className="flex items-center gap-4">
-            <Avatar name={titleName} size="lg" />
+            <Avatar name={titleName} src={member.avatar_url} size="lg" />
             <div className="min-w-0">
-              <h1 className="text-2xl font-semibold tracking-tight">
-                {titleName}
+              <h1 className="text-balance text-3xl font-semibold tracking-tight">
+                <span className="bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                  {titleName}
+                </span>
               </h1>
               {nickname && member.display_name && (
                 <p className="mt-0.5 text-xs text-muted-foreground">

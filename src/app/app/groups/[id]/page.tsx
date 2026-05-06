@@ -12,6 +12,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { LiveBadge } from "@/components/ui/live-badge";
 import { MotionList, MotionListItem } from "@/components/motion-list";
 import { ClockCard, type OpenShift } from "./clock/clock-card";
 import { RecentShiftsList, type RecentShift } from "./clock/recent-shifts";
@@ -58,7 +59,7 @@ export default async function GroupDetailPage({
   const { data: members } = await supabase
     .from("group_members")
     .select(
-      `id, role, display_name, joined_at, user_id,
+      `id, role, display_name, avatar_url, joined_at, user_id,
        employee_profile:employee_profiles(
          id,
          position:positions(name)
@@ -117,6 +118,15 @@ export default async function GroupDetailPage({
   const isEmployer = myMembership?.role === "employer";
   const isEmployee = myMembership?.role === "employee";
   const memberCount = members?.length ?? 0;
+  const workingNow = openByMember.size;
+
+  // Position count for the employer stats strip.
+  const { count: positionsCount } = isEmployer
+    ? await supabase
+        .from("positions")
+        .select("id", { count: "exact", head: true })
+        .eq("group_id", id)
+    : { count: 0 };
 
   // Employee-only: fetch clock state + today's totals + recent shifts.
   let openShift: OpenShift | null = null;
@@ -190,19 +200,24 @@ export default async function GroupDetailPage({
         </ol>
       </nav>
 
-      {/* Hero card */}
+      {/* Hero */}
       <section className="relative overflow-hidden rounded-2xl border border-border bg-surface/70 p-6 shadow-sm shadow-black/5 backdrop-blur-sm">
-        {/* subtle radial accent inside the hero */}
         <div
           aria-hidden
-          className="pointer-events-none absolute -right-20 -top-20 h-60 w-60 rounded-full bg-emerald-500/10 blur-3xl"
+          className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-emerald-500/10 blur-3xl"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -bottom-24 -left-24 h-60 w-60 rounded-full bg-cyan-500/10 blur-3xl"
         />
         <div className="relative flex flex-wrap items-start justify-between gap-4">
           <div className="flex items-center gap-4">
             <Avatar name={group.name} size="lg" />
             <div className="min-w-0">
-              <h1 className="text-2xl font-semibold tracking-tight">
-                {group.name}
+              <h1 className="text-balance text-3xl font-semibold tracking-tight">
+                <span className="bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                  {group.name}
+                </span>
               </h1>
               <div className="mt-1.5 flex flex-wrap items-center gap-2">
                 <Badge variant={isEmployer ? "accent" : "muted"}>
@@ -211,6 +226,11 @@ export default async function GroupDetailPage({
                 <span className="text-xs text-muted-foreground">
                   {memberCount} {memberCount === 1 ? "miembro" : "miembros"}
                 </span>
+                {workingNow > 0 && (
+                  <LiveBadge tone="emerald" size="sm">
+                    {workingNow} trabajando
+                  </LiveBadge>
+                )}
               </div>
             </div>
           </div>
@@ -234,6 +254,27 @@ export default async function GroupDetailPage({
             </div>
           )}
         </div>
+
+        {isEmployer && (
+          <div className="relative mt-6 grid grid-cols-3 gap-3 sm:max-w-md">
+            <Stat
+              label="Miembros"
+              value={memberCount}
+              icon={<Users className="h-3.5 w-3.5" aria-hidden />}
+            />
+            <Stat
+              label="Trabajando"
+              value={workingNow}
+              icon={<Clock className="h-3.5 w-3.5" aria-hidden />}
+              accent={workingNow > 0}
+            />
+            <Stat
+              label="Roles"
+              value={positionsCount ?? 0}
+              icon={<Briefcase className="h-3.5 w-3.5" aria-hidden />}
+            />
+          </div>
+        )}
       </section>
 
       <section className="space-y-3">
@@ -275,7 +316,7 @@ export default async function GroupDetailPage({
 
             const inner = (
               <>
-                <Avatar name={shownName ?? "?"} size="md" />
+                <Avatar name={shownName ?? "?"} src={m.avatar_url} size="md" />
 
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -286,7 +327,7 @@ export default async function GroupDetailPage({
                         </span>
                       )}
                     </p>
-                    {open && <OnlineDot />}
+                    {open && <LiveBadge size="sm">Trabajando</LiveBadge>}
                   </div>
                   {subtitleParts.length > 0 && (
                     <p className="mt-0.5 truncate text-xs text-muted-foreground">
@@ -310,9 +351,9 @@ export default async function GroupDetailPage({
             );
 
             const rowBase =
-              "group flex items-center gap-3.5 rounded-xl border border-border bg-surface p-3.5 transition-colors";
+              "group flex items-center gap-3.5 rounded-xl border border-border bg-surface/60 p-3.5 backdrop-blur-sm transition-all";
             const rowInteractive =
-              "hover:border-border-strong hover:bg-surface-muted/40";
+              "hover:border-border-strong hover:bg-surface-muted/40 hover:shadow-md hover:shadow-black/5";
 
             return (
               <MotionListItem key={m.id} hover={false}>
@@ -383,15 +424,31 @@ export default async function GroupDetailPage({
   );
 }
 
-function OnlineDot() {
+function Stat({
+  label,
+  value,
+  icon,
+  accent = false,
+}: {
+  label: string;
+  value: number;
+  icon: React.ReactNode;
+  accent?: boolean;
+}) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
-      <span className="relative inline-flex h-1.5 w-1.5">
-        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-60" />
-        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
-      </span>
-      Trabajando
-    </span>
+    <div
+      className={`rounded-xl border ${accent ? "border-emerald-500/30 bg-emerald-500/5" : "border-border bg-surface-muted/30"} p-3`}
+    >
+      <div className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+        {icon}
+        {label}
+      </div>
+      <p
+        className={`mt-1 text-2xl font-semibold tabular-nums ${accent ? "text-emerald-700 dark:text-emerald-300" : "text-foreground"}`}
+      >
+        {value}
+      </p>
+    </div>
   );
 }
 

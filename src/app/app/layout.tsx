@@ -16,8 +16,23 @@ export default async function AppLayout({
     redirect("/login");
   }
 
+  // Pull the most recent membership for canonical name + avatar (they're
+  // mirrored across all memberships, so any single row works).
+  const { data: latestMembership } = await supabase
+    .from("group_members")
+    .select("display_name, avatar_url")
+    .eq("user_id", user.id)
+    .order("joined_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
   const fullName =
-    (user.user_metadata?.full_name as string | undefined) ?? user.email ?? "";
+    latestMembership?.display_name ??
+    (user.user_metadata?.full_name as string | undefined) ??
+    user.email ??
+    "";
+
+  const avatarUrl = latestMembership?.avatar_url ?? null;
 
   return (
     <div className="relative min-h-screen bg-background">
@@ -46,6 +61,7 @@ export default async function AppLayout({
 
       <AppNavbar
         fullName={fullName}
+        avatarUrl={avatarUrl}
         links={[{ label: "Mis grupos", href: "/app" }]}
       />
 

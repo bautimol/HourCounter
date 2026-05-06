@@ -4,6 +4,7 @@ import { Briefcase, ChevronRight, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { SpotlightCard } from "@/components/ui/spotlight-card";
 import { PageHeader } from "@/components/page-header";
 import { MotionList, MotionListItem } from "@/components/motion-list";
 import { formatCurrency, paymentPeriodLabel } from "@/lib/format";
@@ -100,10 +101,10 @@ export default async function PositionsListPage({
                 href={`/app/groups/${id}/positions/${p.id}`}
                 className="block"
               >
-                <Card className="group transition-all duration-200 hover:border-border-strong hover:bg-surface-muted/40 hover:shadow-md hover:shadow-black/5">
-                  <div className="flex items-center justify-between gap-3 p-4">
+                <SpotlightCard tint="emerald">
+                  <div className="flex items-center justify-between gap-3 p-5">
                     <div className="min-w-0 space-y-1">
-                      <p className="truncate font-medium">{p.name}</p>
+                      <p className="truncate text-base font-medium">{p.name}</p>
                       <p className="text-xs text-muted-foreground">
                         {formatCurrency(p.hourly_rate, p.currency)} / hora ·{" "}
                         {paymentPeriodLabel(
@@ -117,7 +118,7 @@ export default async function PositionsListPage({
                       aria-hidden
                     />
                   </div>
-                </Card>
+                </SpotlightCard>
               </Link>
             </MotionListItem>
           ))}

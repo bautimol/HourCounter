@@ -8,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { CopyButton } from "@/components/ui/copy-button";
 import { PageHeader } from "@/components/page-header";
 import { CreateInvitationForm } from "./create-invitation-form";
 
@@ -111,12 +112,13 @@ export default async function InvitePage({
                   ? inv.position[0]?.name
                   : (inv.position as { name?: string } | null)?.name;
 
+                const copyable = !used && !expired;
                 return (
                   <li
                     key={inv.id}
-                    className="flex items-center justify-between gap-4 px-5 py-3"
+                    className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5"
                   >
-                    <div className="min-w-0 space-y-1">
+                    <div className="min-w-0 flex-1 space-y-1.5">
                       <div className="flex flex-wrap items-center gap-2">
                         <code className="rounded bg-surface-muted px-1.5 py-0.5 text-xs font-mono">
                           {inv.code}
@@ -139,11 +141,16 @@ export default async function InvitePage({
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Clock className="h-3.5 w-3.5" aria-hidden />
-                      {inv.expires_at
-                        ? new Date(inv.expires_at).toLocaleDateString("es-AR")
-                        : "Sin vencimiento"}
+                    <div className="flex shrink-0 items-center gap-2">
+                      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                        <Clock className="h-3.5 w-3.5" aria-hidden />
+                        {inv.expires_at
+                          ? new Date(inv.expires_at).toLocaleDateString(
+                              "es-AR",
+                            )
+                          : "Sin vencimiento"}
+                      </span>
+                      {copyable && <CopyButton value={link} label="Copiar" />}
                     </div>
                   </li>
                 );
