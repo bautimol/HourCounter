@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import {
   Briefcase,
   ChevronRight,
+  ClipboardCheck,
   Clock,
   Coins,
   Settings as SettingsIcon,
@@ -129,6 +130,20 @@ export default async function GroupDetailPage({
         .eq("group_id", id)
     : { count: 0 };
 
+  // Pending shifts (closed, not verified) — drives the verify-shifts CTA.
+  const { count: pendingShiftsCount } = isEmployer
+    ? await supabase
+        .from("time_entries")
+        .select(
+          "id, employee_profile:employee_profiles!inner(group_member:group_members!inner(group_id, status))",
+          { count: "exact", head: true },
+        )
+        .eq("employee_profile.group_member.group_id", id)
+        .eq("employee_profile.group_member.status", "active")
+        .eq("status", "closed")
+        .is("verified_at", null)
+    : { count: 0 };
+
   // Employee-only: fetch clock state + today's totals + recent shifts.
   let openShift: OpenShift | null = null;
   let recentShifts: RecentShift[] = [];
@@ -251,6 +266,23 @@ export default async function GroupDetailPage({
               >
                 <Briefcase className="h-4 w-4" aria-hidden />
                 Roles
+              </Link>
+              <Link
+                href={`/app/groups/${id}/shifts`}
+                className={
+                  "inline-flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium transition-colors " +
+                  ((pendingShiftsCount ?? 0) > 0
+                    ? "border-accent bg-accent text-accent-foreground shadow-sm shadow-emerald-700/20 hover:opacity-90"
+                    : "border-border bg-surface text-foreground hover:bg-surface-muted")
+                }
+              >
+                <ClipboardCheck className="h-4 w-4" aria-hidden />
+                Turnos
+                {(pendingShiftsCount ?? 0) > 0 && (
+                  <span className="rounded-full bg-white/20 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums">
+                    {pendingShiftsCount}
+                  </span>
+                )}
               </Link>
               <Link
                 href={`/app/groups/${id}/settings`}
@@ -405,11 +437,6 @@ export default async function GroupDetailPage({
         <ComingSoonGrid
           title="Próximamente para empleadores"
           items={[
-            {
-              icon: <Clock className="h-4 w-4" aria-hidden />,
-              title: "Verificación de turnos",
-              description: "Aprobá los clock in/out al final del día.",
-            },
             {
               icon: <Coins className="h-4 w-4" aria-hidden />,
               title: "Calcular pagos",

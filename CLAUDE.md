@@ -207,7 +207,8 @@ HourCounter/
 │       ├── 0008_member_extras.sql         employee_notes, member_nicknames, update_member_full(), update_my_display_name()
 │       ├── 0009_time_tracking.sql         drops profile-completeness check, adds time_entries.expected_minutes + one-open-shift unique index, RPCs clock_in/clock_out/auto_close_expired_shifts/update_my_time_entry
 │       ├── 0010_avatars.sql               group_members.avatar_url + update_my_avatar(); manual setup notes for the public `avatars` Storage bucket
-│       └── 0011_group_avatars.sql         groups.avatar_url + update_group_avatar() (employer-gated); reuses the same `avatars` bucket under groups/<groupId>/...
+│       ├── 0011_group_avatars.sql         groups.avatar_url + update_group_avatar() (employer-gated); reuses the same `avatars` bucket under groups/<groupId>/...
+│       └── 0012_shift_verification.sql    verify_shift / unverify_shift / employer_update_shift / verify_shifts_bulk RPCs
 ├── .env.local                      Supabase URL + anon key (gitignored)
 ├── .env.local.example              template
 ├── package.json
@@ -240,7 +241,7 @@ HourCounter/
 | Today's worked hours (live)                 | ✅ done        |
 | "Trabajando" indicator on members list      | ✅ done        |
 | Global clock-out banner on /app             | ⏳ pending     |
-| Verification flow (employer reviews shifts) | ⏳ pending     |
+| Verification flow (employer reviews shifts) | ✅ done        |
 | Payment calculation + recording             | ⏳ pending     |
 | Payment adjustments (one-shot)              | ⏳ pending     |
 | Push notifications                          | ⏳ pending     |
@@ -320,33 +321,38 @@ Supabase config required:
 
 ## Próximo en la agenda
 
-The natural progression from what's already shipped (clock in/out
-employee side complete) is the employer-side workflow at the end of a
-period. In order:
+Verification flow shipped (2026-05-06). Next progression:
 
-1. **Verification flow (employer side)** — list of pending shifts
-   per group, "approve / edit / reject" actions, mark `verified_by` +
-   `verified_at`. Schema is already there. Probably needs a new
-   `/app/groups/[id]/shifts` page for the employer that defaults to
-   "needs review" + a section on the group detail page showing
-   `needs_review` count.
-2. **Payment calculation** — for a given employee + period, sum
+1. **Payment calculation** — for a given employee + period, sum
    verified hours × effective rate + applicable fixed amounts (taking
    into account `frequency` per amount). Produce a draft `payments`
    row the employer can review.
-3. **Payment adjustments UI** — schema already has
+2. **Payment adjustments UI** — schema already has
    `payment_adjustments`; we need the inline editor on the payment
    draft to add/remove line items (anticipos, premios, descuentos)
    before locking it in.
-4. **Global clock-out banner on `/app`** — when any of the user's
+3. **Global clock-out banner on `/app`** — when any of the user's
    memberships has an open shift, banner at the top of the groups
    list with quick-close. Small but high impact.
-5. **PWA + push notifications** — install prompt + service worker +
+4. **PWA + push notifications** — install prompt + service worker +
    FCM (or Web Push). First use cases: verification reminder for the
    employer, "olvidaste de cerrar el turno" for the employee.
 
-After 1-3 ship, we have the end-to-end loop: invite → clock → verify
-→ pay. Everything past that is polish/scale.
+After 1-2 ship, we have the end-to-end loop: invite → clock →
+verify → pay. Everything past that is polish/scale.
+
+### Verification flow (just shipped) — quick reference
+
+- `/app/groups/[id]/shifts` — employer-only list with tabs
+  (Pendientes default / Verificados / Para revisar / Todos), bulk
+  select on Pendientes, per-row "Aprobar" + "Detalle" links.
+- `/app/groups/[id]/shifts/[shiftId]` — employer review/edit page.
+  "Solo guardar" vs "Guardar y aprobar" buttons. Verified shifts
+  show an "Desaprobar este turno" undo.
+- Group detail page shows pending count as a colored badge on the
+  Turnos nav button.
+- Pending = `status='closed' AND verified_at IS NULL`. Auto-closed
+  shifts show up as pending until the employer reviews them.
 
 ## Posibles mejoras (backlog de ideas)
 
