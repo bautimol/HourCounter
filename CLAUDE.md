@@ -354,6 +354,31 @@ verify → pay. Everything past that is polish/scale.
 - Pending = `status='closed' AND verified_at IS NULL`. Auto-closed
   shifts show up as pending until the employer reviews them.
 
+## Path to monetization (TBD)
+
+Surfaced during a 2026-05-06 cold review by another Claude session.
+Not features, but missing pieces that gate "is this a product or
+portfolio piece":
+
+- **Pricing model**: target informal AR — likely free up to ~2
+  employees, then ~USD 1-2 / active employee / month equivalent in
+  pesos. Hubstaff's USD 7-25/seat is a non-starter for the segment.
+- **MercadoPago Subscriptions** (cobro en pesos). Critical: a
+  kiosquero won't onboard with an international card. This is the
+  hardest and most decisive piece for AR product viability.
+- **Pricing page + /legal**: terms, privacy, basic ToS. Required
+  before any paid customer (and for trust signal even on free).
+- **Custom domain + soft launch infra**: hourcounter.com.ar, Sentry
+  for prod errors, Resend for transactional email (Supabase
+  default lands in spam), PostHog free tier for funnel analytics,
+  Supabase backup policy.
+- **Onboarding plantilla** "Mi primer local en 2 minutos": pre-load
+  a group with 2 typical AR roles (Cajero/Cocinero) and a generated
+  invite link, so the dueño doesn't face a blank slate.
+
+These don't go on the feature agenda — they're a separate track
+that runs in parallel and blocks "vendible" status.
+
 ## Posibles mejoras (backlog de ideas)
 
 Things mentioned in passing or surfaced during research. Not committed
@@ -380,7 +405,22 @@ but a few of their features map cleanly onto ours.)
   falta el editor inline (parte del paso 3 de la agenda).
 - **Soporte de feriados argentinos**: mapeo automático de horas
   trabajadas en feriado nacional con un multiplicador opcional por
-  rol.
+  rol. Calendar data is public (feriados.json) and updates yearly.
+- **WhatsApp como canal de notificación** (vía WhatsApp Business
+  API o Twilio): for AR informal users, WhatsApp is the OS of the
+  local — push notifications get ignored, WhatsApp doesn't.
+  Probably more impactful than building a PWA push pipeline.
+- **Modo "dueño en el celular"**: mobile-first summary view that
+  shows just *"Hoy: 3 trabajando · 2 turnos para verificar ·
+  $48.500 acumulado esta semana"*. The kiosquero looks at that, not
+  a dashboard.
+- **Export a Excel / Google Sheets** del histórico de pagos para
+  el contador / monotributo.
+- **Audit log** of shift edits (who edited what shift when). Solves
+  the "el empleado dice X, el sistema dice otra cosa" objection.
+- **Rounding policy** per group (round shifts to nearest 5 min,
+  closest 15 min, etc.) so pay calc isn't cents-off and cause
+  arguments.
 
 ### Sin decidir todavía
 
@@ -419,15 +459,34 @@ but a few of their features map cleanly onto ours.)
 
 These were considered but explicitly excluded:
 
-- **Surveillance**: screenshots, % de actividad, app/URL tracking,
-  GPS forzado. Wrong fit for the informal-cash market and a legal /
-  cultural mismatch in AR.
+- **Continuous surveillance**: screenshots cada N minutos,
+  % de actividad, app/URL tracking, GPS continuo. Wrong fit for
+  the informal-cash market and a legal / cultural mismatch in AR.
 - **Project-based billing / invoicing tipo agencia**: the typical
   customer is a kiosco / local, not an agency. Out of scope.
 - **Heavy integrations** (Slack, Jira, Salesforce, etc.): not where
   this market lives.
 - **Apps nativas iOS/Android**: PWA covers it. Maintaining two
   native codebases is not justified for the audience.
+
+### Reabrir (decisión a revisar)
+
+A 2026-05-06 cold review proposed splitting our blanket "no
+surveillance" rule:
+
+- **Geofencing opt-in** (employer toggles per group, with a clearly
+  visible radius around the local).
+- **Foto opcional al clock-in** (selfie at the moment of clocking
+  in, NOT continuous capture).
+
+Framing: this is "transparente, opt-in, una sola vez por turno",
+qualitatively different from Hubstaff-style continuous monitoring.
+For gastronomía / local físico, the dueño's "se quedó en la casa
+fichando" objection is real and these features cleanly answer it
+without invading employee privacy.
+
+Pending decision — keep blanket exclusion, or carve out the
+opt-in transparent variant?
 
 ## Pointers
 
