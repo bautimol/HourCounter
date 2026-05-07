@@ -318,26 +318,110 @@ Supabase config required:
 - `cookies()` is async: `const c = await cookies()`.
 - Route groups `(name)` work the same as before.
 
-## Open questions / things to decide later
+## Próximo en la agenda
 
-- **Position editing propagation**: today, editing a position's scalar
-  fields immediately changes effective values for every in-sync
-  employee (via `effective_employee_profile()` resolution at read
-  time). The fixed-amounts list, however, was already snapshotted at
-  invitation time and is not updated on edit. Do we want a "propagate
-  fixed amounts" affordance later (queue + diff + opt-in apply)?
-- **Time-entry verification**: push notification vs email vs in-app
-  badge. Probably PWA push first.
-- **Currency UX**: today the form accepts free text, validated to 3
-  letters. Should we restrict to a known list (ARS, USD, EUR, ...)?
-- **Group switcher**: currently /app lists all groups. When count > ~5,
-  do we want a dropdown switcher in the header instead?
-- **Generated types**: when does the friction of untyped data outweigh
-  the friction of running `supabase gen types` after every migration?
-- **Position deletion** (decided 2026-05-04): blocked when at least one
-  active employee uses the role. Archived employees do not block. No
-  soft-delete yet — if we need a "deprecate but keep historical
-  payments referencing it" mode, revisit.
+The natural progression from what's already shipped (clock in/out
+employee side complete) is the employer-side workflow at the end of a
+period. In order:
+
+1. **Verification flow (employer side)** — list of pending shifts
+   per group, "approve / edit / reject" actions, mark `verified_by` +
+   `verified_at`. Schema is already there. Probably needs a new
+   `/app/groups/[id]/shifts` page for the employer that defaults to
+   "needs review" + a section on the group detail page showing
+   `needs_review` count.
+2. **Payment calculation** — for a given employee + period, sum
+   verified hours × effective rate + applicable fixed amounts (taking
+   into account `frequency` per amount). Produce a draft `payments`
+   row the employer can review.
+3. **Payment adjustments UI** — schema already has
+   `payment_adjustments`; we need the inline editor on the payment
+   draft to add/remove line items (anticipos, premios, descuentos)
+   before locking it in.
+4. **Global clock-out banner on `/app`** — when any of the user's
+   memberships has an open shift, banner at the top of the groups
+   list with quick-close. Small but high impact.
+5. **PWA + push notifications** — install prompt + service worker +
+   FCM (or Web Push). First use cases: verification reminder for the
+   employer, "olvidaste de cerrar el turno" for the employee.
+
+After 1-3 ship, we have the end-to-end loop: invite → clock → verify
+→ pay. Everything past that is polish/scale.
+
+## Posibles mejoras (backlog de ideas)
+
+Things mentioned in passing or surfaced during research. Not committed
+to, kept here so they don't get lost.
+
+### Inspirado en Hubstaff / mercado argentino informal
+
+(See research notes from Hubstaff competitive analysis. Hubstaff
+itself is a different segment — formal teams, surveillance-heavy —
+but a few of their features map cleanly onto ours.)
+
+- **Reportes mínimos**: "cuánto le pagué a X este mes/año", "horas
+  totales del local", "comparativa mes a mes". Out-of-the-box
+  Hubstaff has 20+; we'd start with 3 or 4 useful ones.
+- **Scheduling**: planificar turnos con anticipación (lunes 9-17,
+  martes 14-22, etc.). Alertas si el empleado no fichó a horario.
+  Útil para informal/gastronomía donde los turnos son variables.
+- **Time off / vacaciones / días libres**: marcar ausencias justas
+  para que no rompan el cálculo de pago.
+- **PDF de liquidación descargable**: los dueños chicos viven
+  imprimiendo recibos; un PDF por período por empleado con horas,
+  fixed amounts y total resuelve un problema real.
+- **Ajustes one-shot UI**: el schema ya tiene `payment_adjustments`,
+  falta el editor inline (parte del paso 3 de la agenda).
+- **Soporte de feriados argentinos**: mapeo automático de horas
+  trabajadas en feriado nacional con un multiplicador opcional por
+  rol.
+
+### Sin decidir todavía
+
+- **Position editing propagation**: today scalar field changes hit
+  every in-sync employee at read time. Fixed-amounts list is
+  snapshotted at invitation time and NOT updated on position edit.
+  Do we want a "apply new fixed amount to all current employees in
+  this rol" button later? (queue + diff + opt-in apply)
+- **Time-entry verification surface**: push notification vs email
+  vs in-app badge. Probably PWA push first.
+- **Currency UX**: today free text validated to 3 letters. Restrict
+  to a known list (ARS, USD, EUR, …)?
+- **Group switcher**: `/app` lists all groups. When count > ~5, do
+  we want a dropdown switcher in the header instead?
+- **Generated types**: at what point does the friction of untyped
+  data outweigh the friction of running `supabase gen types` after
+  every migration?
+- **QR code for invitations**: low priority, link works fine, but a
+  QR is nice for sharing in person without typing.
+- **Onboarding state for empty profiles**: the moment after an
+  employee is invited without a position and clocks in, their
+  profile exists but is empty. We should surface that to the
+  employer ("Empleado X fichó pero no tiene perfil — configurarlo")
+  somewhere prominent.
+
+### Decided
+
+- **Position deletion** (2026-05-04): blocked when at least one
+  active employee uses the role. Archived employees do NOT block.
+  No soft-delete yet.
+- **Live link vs snapshot for fixed amounts** (2026-05-05): scalar
+  fields are live-link, fixed-amounts list is snapshot. Bulk
+  propagation is opt-in and TBD.
+
+### Out of scope (won't build)
+
+These were considered but explicitly excluded:
+
+- **Surveillance**: screenshots, % de actividad, app/URL tracking,
+  GPS forzado. Wrong fit for the informal-cash market and a legal /
+  cultural mismatch in AR.
+- **Project-based billing / invoicing tipo agencia**: the typical
+  customer is a kiosco / local, not an agency. Out of scope.
+- **Heavy integrations** (Slack, Jira, Salesforce, etc.): not where
+  this market lives.
+- **Apps nativas iOS/Android**: PWA covers it. Maintaining two
+  native codebases is not justified for the audience.
 
 ## Pointers
 
