@@ -1,16 +1,9 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ChevronRight, ClipboardCheck, ShieldCheck } from "lucide-react";
+import { ClipboardCheck, ShieldCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { Avatar } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
-import {
-  formatDuration,
-  formatShortDate,
-  formatTimeOfDay,
-} from "@/lib/format";
 import { ShiftBulkActions } from "./shift-bulk-actions";
 
 type Filter = "pending" | "verified" | "needs_review" | "all";
@@ -206,67 +199,6 @@ export default async function ShiftsListPage({
             verifiedAt: s.verified_at,
             member: s.member ?? null,
           }))}
-          renderRow={(s) => {
-            const start = new Date(s.clockIn);
-            const end = s.clockOut ? new Date(s.clockOut) : null;
-            const durationMs =
-              end != null ? end.getTime() - start.getTime() : null;
-            const verified = s.verifiedAt != null;
-            const member = s.member;
-
-            return (
-              <Link
-                href={`/app/groups/${id}/shifts/${s.id}`}
-                className="flex flex-1 items-center gap-3.5"
-              >
-                <Avatar
-                  name={member?.display_name ?? "?"}
-                  src={member?.avatar_url ?? null}
-                  size="md"
-                />
-                <div className="min-w-0 flex-1 space-y-0.5">
-                  <p className="truncate text-sm font-medium">
-                    {member?.display_name ?? (
-                      <span className="italic text-muted-foreground">
-                        sin nombre
-                      </span>
-                    )}
-                  </p>
-                  <p className="text-xs text-muted-foreground tabular-nums">
-                    {formatShortDate(start)} ·{" "}
-                    {formatTimeOfDay(start)}
-                    {" – "}
-                    {end ? formatTimeOfDay(end) : "abierto"}
-                    {durationMs != null
-                      ? ` · ${formatDuration(durationMs)}`
-                      : ""}
-                  </p>
-                  {s.notes && (
-                    <p className="truncate text-xs italic text-muted-foreground">
-                      {s.notes}
-                    </p>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-2">
-                  {verified ? (
-                    <Badge variant="accent">
-                      <ShieldCheck className="mr-1 h-3 w-3" aria-hidden />
-                      Verificado
-                    </Badge>
-                  ) : s.status === "needs_review" ? (
-                    <Badge variant="muted">Para revisar</Badge>
-                  ) : (
-                    <Badge variant="muted">Pendiente</Badge>
-                  )}
-                  <ChevronRight
-                    className="h-4 w-4 text-muted-foreground"
-                    aria-hidden
-                  />
-                </div>
-              </Link>
-            );
-          }}
         />
       )}
     </div>

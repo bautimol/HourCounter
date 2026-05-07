@@ -1,14 +1,22 @@
 "use client";
 
-import { useActionState, useState, type ReactNode } from "react";
-import { Check, ShieldCheck } from "lucide-react";
+import Link from "next/link";
+import { useActionState, useState } from "react";
+import { Check, ChevronRight, ShieldCheck } from "lucide-react";
 import {
   bulkVerifyShiftsAction,
   verifyShiftAction,
   type ShiftActionState,
 } from "./actions";
+import { Avatar } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ErrorMessage } from "@/components/ui/input";
+import {
+  formatDuration,
+  formatShortDate,
+  formatTimeOfDay,
+} from "@/lib/format";
 
 const initialState: ShiftActionState = { error: null };
 
@@ -27,23 +35,22 @@ export type BulkShiftRow = {
 };
 
 /**
- * Wraps the shifts list with checkbox selection and a sticky bulk-action
- * bar. The actual row content is rendered by `renderRow` so the server
- * page owns the layout/links.
+ * Wraps the shifts list with checkbox selection + a bulk-action bar +
+ * per-row quick-approve.
  *
- * If `allowSelect` is false (e.g. on the "Verified" tab) the checkboxes
- * and bulk bar are hidden entirely.
+ * Why client-only: server components can't pass functions to client
+ * components. We were doing `renderRow={...}` from the server page; now
+ * the row layout lives inside this file and the server only passes
+ * serializable data.
  */
 export function ShiftBulkActions({
   groupId,
   allowSelect,
   shifts,
-  renderRow,
 }: {
   groupId: string;
   allowSelect: boolean;
   shifts: BulkShiftRow[];
-  renderRow: (s: BulkShiftRow) => ReactNode;
 }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
@@ -111,6 +118,13 @@ export function ShiftBulkActions({
       <ul className="grid gap-2.5">
         {shifts.map((s) => {
           const checked = selected.has(s.id);
+          const start = new Date(s.clockIn);
+          const end = s.clockOut ? new Date(s.clockOut) : null;
+          const durationMs =
+            end != null ? end.getTime() - start.getTime() : null;
+          const verified = s.verifiedAt != null;
+          const member = s.member;
+
           return (
             <li
               key={s.id}
@@ -136,9 +150,57 @@ export function ShiftBulkActions({
                 </button>
               )}
 
-              {renderRow(s)}
+              <Link
+                href={`/app/groups/${groupId}/shifts/${s.id}`}
+                className="flex flex-1 items-center gap-3.5"
+              >
+                <Avatar
+                  name={member?.display_name ?? "?"}
+                  src={member?.avatar_url ?? null}
+                  size="md"
+                />
+                <div className="min-w-0 flex-1 space-y-0.5">
+                  <p className="truncate text-sm font-medium">
+                    {member?.display_name ?? (
+                      <span className="italic text-muted-foreground">
+                        sin nombre
+                      </span>
+                    )}
+                  </p>
+                  <p className="text-xs text-muted-foreground tabular-nums">
+                    {formatShortDate(start)} ·{" "}
+                    {formatTimeOfDay(start)}
+                    {" – "}
+                    {end ? formatTimeOfDay(end) : "abierto"}
+                    {durationMs != null
+                      ? ` · ${formatDuration(durationMs)}`
+                      : ""}
+                  </p>
+                  {s.notes && (
+                    <p className="truncate text-xs italic text-muted-foreground">
+                      {s.notes}
+                    </p>
+                  )}
+                </div>
 
-              {/* Per-row quick approve, only when not yet verified */}
+                <div className="flex items-center gap-2">
+                  {verified ? (
+                    <Badge variant="accent">
+                      <ShieldCheck className="mr-1 h-3 w-3" aria-hidden />
+                      Verificado
+                    </Badge>
+                  ) : s.status === "needs_review" ? (
+                    <Badge variant="muted">Para revisar</Badge>
+                  ) : (
+                    <Badge variant="muted">Pendiente</Badge>
+                  )}
+                  <ChevronRight
+                    className="h-4 w-4 text-muted-foreground"
+                    aria-hidden
+                  />
+                </div>
+              </Link>
+
               {allowSelect && s.verifiedAt == null && (
                 <QuickApproveForm groupId={groupId} shiftId={s.id} />
               )}
