@@ -13,6 +13,7 @@ import {
 } from "@/lib/format";
 import { ShiftReviewForm } from "./shift-review-form";
 import { UnverifyShiftButton } from "./unverify-shift-button";
+import { ShiftAuditLog, type AuditEntry } from "./audit-log";
 
 type Member = {
   id: string;
@@ -104,6 +105,46 @@ export default async function ShiftReviewPage({
   const verified = shift.verified_at != null;
 
   const memberName = member.display_name ?? "Empleado";
+
+  // Audit log: edits to this shift + editor display names from this group.
+  const { data: rawEdits } = await supabase
+    .from("shift_edits")
+    .select("id, edited_at, field, before_value, after_value, edited_by")
+    .eq("shift_id", shiftId)
+    .order("edited_at", { ascending: false });
+
+  const edits = (rawEdits ?? []) as Array<{
+    id: string;
+    edited_at: string;
+    field: "clock_out" | "notes" | "status" | "verified";
+    before_value: string | null;
+    after_value: string | null;
+    edited_by: string;
+  }>;
+
+  const editorIds = Array.from(new Set(edits.map((e) => e.edited_by)));
+  const { data: editorRows } =
+    editorIds.length > 0
+      ? await supabase
+          .from("group_members")
+          .select("user_id, display_name")
+          .eq("group_id", id)
+          .in("user_id", editorIds)
+      : { data: [] };
+
+  const editorByUser = new Map<string, string | null>();
+  for (const r of editorRows ?? []) {
+    editorByUser.set(r.user_id, r.display_name ?? null);
+  }
+
+  const auditEntries: AuditEntry[] = edits.map((e) => ({
+    id: e.id,
+    edited_at: e.edited_at,
+    field: e.field,
+    before_value: e.before_value,
+    after_value: e.after_value,
+    editor: { display_name: editorByUser.get(e.edited_by) ?? null },
+  }));
 
   return (
     <div className="mx-auto max-w-2xl space-y-8">
@@ -197,6 +238,8 @@ export default async function ShiftReviewPage({
           />
         </CardBody>
       </Card>
+
+      <ShiftAuditLog entries={auditEntries} />
 
       {verified && (
         <div className="flex justify-end">
