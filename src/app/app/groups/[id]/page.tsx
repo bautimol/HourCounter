@@ -31,7 +31,7 @@ export default async function GroupDetailPage({
 
   const { data: group, error: groupError } = await supabase
     .from("groups")
-    .select("id, name, avatar_url, created_at")
+    .select("id, name, avatar_url, created_at, geofence_enabled")
     .eq("id", id)
     .maybeSingle();
 
@@ -429,6 +429,7 @@ export default async function GroupDetailPage({
             defaultExpectedHours={null}
             defaultExpectedExtraMinutes={null}
             closedTodayMinutes={closedTodayMinutes}
+            geofenceEnabled={!!group.geofence_enabled}
           />
 
           <section className="space-y-3">

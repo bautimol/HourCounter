@@ -37,10 +37,19 @@ export async function clockInAction(
     expectedMinutes = total;
   }
 
+  const latRaw = String(formData.get("clock_in_lat") ?? "").trim();
+  const lngRaw = String(formData.get("clock_in_lng") ?? "").trim();
+  const lat = latRaw === "" ? null : Number(latRaw);
+  const lng = lngRaw === "" ? null : Number(lngRaw);
+  const validLat = lat !== null && Number.isFinite(lat) && lat >= -90 && lat <= 90;
+  const validLng = lng !== null && Number.isFinite(lng) && lng >= -180 && lng <= 180;
+
   const supabase = await createClient();
   const { error } = await supabase.rpc("clock_in", {
     target_group_id: groupId,
     target_expected_minutes: expectedMinutes,
+    target_lat: validLat ? lat : null,
+    target_lng: validLng ? lng : null,
   });
 
   if (error) {

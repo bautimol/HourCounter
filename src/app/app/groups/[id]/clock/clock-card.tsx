@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
-import { Play, Square, Timer } from "lucide-react";
+import { MapPin, Play, Square, Timer } from "lucide-react";
 import {
   clockInAction,
   clockOutAction,
@@ -36,6 +36,7 @@ export function ClockCard({
   defaultExpectedHours,
   defaultExpectedExtraMinutes,
   closedTodayMinutes,
+  geofenceEnabled,
 }: {
   groupId: string;
   openShift: OpenShift | null;
@@ -43,6 +44,8 @@ export function ClockCard({
   defaultExpectedExtraMinutes: number | null;
   /** Sum of closed entries' minutes for today, computed server-side. */
   closedTodayMinutes: number;
+  /** When true, the clock-in form requests browser geolocation. */
+  geofenceEnabled: boolean;
 }) {
   return (
     <Card>
@@ -60,6 +63,7 @@ export function ClockCard({
             groupId={groupId}
             defaultExpectedHours={defaultExpectedHours}
             defaultExpectedExtraMinutes={defaultExpectedExtraMinutes}
+            geofenceEnabled={geofenceEnabled}
           />
         )}
 
@@ -74,17 +78,67 @@ export function ClockCard({
   );
 }
 
+type GeoState =
+  | { status: "idle" }
+  | { status: "requesting" }
+  | { status: "ok"; lat: number; lng: number }
+  | { status: "denied" | "unavailable" | "timeout" | "error"; message: string };
+
+function useGeolocation(enabled: boolean): GeoState {
+  const [state, setState] = useState<GeoState>({ status: "idle" });
+
+  useEffect(() => {
+    if (!enabled) return;
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      setState({
+        status: "unavailable",
+        message: "Geolocalización no soportada",
+      });
+      return;
+    }
+    setState({ status: "requesting" });
+    const watchId = navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setState({
+          status: "ok",
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+        });
+      },
+      (err) => {
+        let kind: "denied" | "unavailable" | "timeout" | "error" = "error";
+        if (err.code === err.PERMISSION_DENIED) kind = "denied";
+        else if (err.code === err.POSITION_UNAVAILABLE) kind = "unavailable";
+        else if (err.code === err.TIMEOUT) kind = "timeout";
+        setState({ status: kind, message: err.message });
+      },
+      { enableHighAccuracy: true, timeout: 10_000, maximumAge: 60_000 },
+    );
+    return () => {
+      void watchId;
+    };
+  }, [enabled]);
+
+  return state;
+}
+
 function ClockInForm({
   groupId,
   defaultExpectedHours,
   defaultExpectedExtraMinutes,
+  geofenceEnabled,
 }: {
   groupId: string;
   defaultExpectedHours: number | null;
   defaultExpectedExtraMinutes: number | null;
+  geofenceEnabled: boolean;
 }) {
   const action = clockInAction.bind(null, groupId);
   const [state, formAction] = useActionState(action, initialState);
+  const geo = useGeolocation(geofenceEnabled);
+
+  const lat = geo.status === "ok" ? geo.lat.toFixed(6) : "";
+  const lng = geo.status === "ok" ? geo.lng.toFixed(6) : "";
 
   return (
     <form action={formAction} className="space-y-5">
@@ -92,6 +146,14 @@ function ClockInForm({
         Iniciá tu turno. Si decís cuánto vas a trabajar, se cierra solo al
         cumplirse el tiempo (lo podés editar después).
       </p>
+
+      {geofenceEnabled && (
+        <GeofenceStatus geo={geo} />
+      )}
+
+      <input type="hidden" name="clock_in_lat" value={lat} />
+      <input type="hidden" name="clock_in_lng" value={lng} />
+
 
       <div>
         <Label className="mb-1.5 block">Duración estimada (opcional)</Label>
@@ -274,6 +336,49 @@ function LiveTodayTotal({
         {formatDuration(liveMs)}
       </span>
       {openShiftStartTs ? " (incluyendo el turno actual)" : ""}.
+    </div>
+  );
+}
+
+function GeofenceStatus({ geo }: { geo: GeoState }) {
+  if (geo.status === "ok") {
+    return (
+      <div className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-3 py-2 text-xs text-emerald-700 dark:text-emerald-300">
+        <MapPin className="h-3.5 w-3.5" aria-hidden />
+        Ubicación OK · este turno se va a registrar con tu posición.
+      </div>
+    );
+  }
+  if (geo.status === "requesting") {
+    return (
+      <div className="flex items-center gap-2 rounded-lg border border-border bg-surface-muted px-3 py-2 text-xs text-muted-foreground">
+        <MapPin className="h-3.5 w-3.5 animate-pulse" aria-hidden />
+        Obteniendo tu ubicación…
+      </div>
+    );
+  }
+  if (geo.status === "denied") {
+    return (
+      <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
+        <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
+        <span>
+          Tu navegador denegó la geolocalización. Tu empleador tiene activada
+          la verificación por ubicación, así que el turno va a quedar marcado
+          como "fichado sin ubicación" para que lo revise.
+        </span>
+      </div>
+    );
+  }
+  // unavailable / timeout / error
+  return (
+    <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
+      <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
+      <span>
+        No pudimos obtener tu ubicación
+        {"message" in geo && geo.message ? ` (${geo.message})` : ""}. El
+        turno va a quedar marcado como "sin ubicación" para que el empleador
+        lo revise.
+      </span>
     </div>
   );
 }

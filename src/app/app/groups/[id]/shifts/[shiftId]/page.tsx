@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ClipboardCheck, ShieldCheck } from "lucide-react";
+import { ClipboardCheck, MapPin, MapPinOff, ShieldCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +29,9 @@ type ShiftRow = {
   verified_at: string | null;
   verified_by: string | null;
   expected_minutes: number | null;
+  clock_in_lat: number | null;
+  clock_in_lng: number | null;
+  within_geofence: boolean | null;
   employee_profile: {
     group_member: Member | Member[] | null;
   } | null;
@@ -68,7 +71,7 @@ export default async function ShiftReviewPage({
     .from("time_entries")
     .select(
       `id, clock_in, clock_out, status, notes, verified_at, verified_by,
-       expected_minutes,
+       expected_minutes, clock_in_lat, clock_in_lng, within_geofence,
        employee_profile:employee_profiles!inner(
          group_member:group_members!inner(
            id, display_name, avatar_url, group_id
@@ -157,11 +160,20 @@ export default async function ShiftReviewPage({
             </Link>
           </div>
         </CardHeader>
-        {shift.notes && (
-          <CardBody className="pt-0">
-            <p className="rounded-md border border-border bg-surface-muted/40 p-3 text-sm italic text-muted-foreground">
-              {shift.notes}
-            </p>
+        {(shift.notes || shift.within_geofence !== null) && (
+          <CardBody className="space-y-3 pt-0">
+            {shift.within_geofence !== null && (
+              <GeofenceBanner
+                within={shift.within_geofence}
+                lat={shift.clock_in_lat}
+                lng={shift.clock_in_lng}
+              />
+            )}
+            {shift.notes && (
+              <p className="rounded-md border border-border bg-surface-muted/40 p-3 text-sm italic text-muted-foreground">
+                {shift.notes}
+              </p>
+            )}
           </CardBody>
         )}
       </Card>
@@ -191,6 +203,57 @@ export default async function ShiftReviewPage({
           <UnverifyShiftButton groupId={id} shiftId={shiftId} />
         </div>
       )}
+    </div>
+  );
+}
+
+function GeofenceBanner({
+  within,
+  lat,
+  lng,
+}: {
+  within: boolean;
+  lat: number | null;
+  lng: number | null;
+}) {
+  if (within) {
+    return (
+      <div className="flex items-center gap-2 rounded-md border border-emerald-500/30 bg-emerald-500/5 p-3 text-xs text-emerald-700 dark:text-emerald-300">
+        <MapPin className="h-3.5 w-3.5" aria-hidden />
+        Fichó dentro del radio configurado.
+        {lat != null && lng != null && (
+          <a
+            target="_blank"
+            rel="noreferrer noopener"
+            href={`https://www.google.com/maps?q=${lat},${lng}`}
+            className="ml-auto underline"
+          >
+            Ver en mapa
+          </a>
+        )}
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/5 p-3 text-xs text-amber-700 dark:text-amber-300">
+      <MapPinOff className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
+      <div className="flex-1">
+        Fichó <strong>fuera del radio</strong>{" "}
+        {lat == null || lng == null
+          ? "(o sin compartir ubicación)"
+          : "configurado"}
+        .
+        {lat != null && lng != null && (
+          <a
+            target="_blank"
+            rel="noreferrer noopener"
+            href={`https://www.google.com/maps?q=${lat},${lng}`}
+            className="ml-2 underline"
+          >
+            Ver en mapa
+          </a>
+        )}
+      </div>
     </div>
   );
 }

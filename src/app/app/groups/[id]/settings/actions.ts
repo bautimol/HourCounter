@@ -88,3 +88,58 @@ export async function clearGroupAvatarAction(
   revalidatePath("/app");
   return { error: null, ok: true };
 }
+
+// ---- Geofence ----
+
+export type GeofenceState = {
+  error: string | null;
+  ok: boolean;
+};
+
+export async function updateGeofenceAction(
+  groupId: string,
+  _prevState: GeofenceState,
+  formData: FormData,
+): Promise<GeofenceState> {
+  const enabled = String(formData.get("enabled") ?? "0") === "1";
+  const latRaw = String(formData.get("lat") ?? "").trim();
+  const lngRaw = String(formData.get("lng") ?? "").trim();
+  const radiusRaw = String(formData.get("radius_m") ?? "").trim();
+
+  let lat: number | null = null;
+  let lng: number | null = null;
+  let radius: number | null = null;
+
+  if (enabled) {
+    if (!latRaw || !lngRaw || !radiusRaw) {
+      return { error: "Completá lat / lng / radio", ok: false };
+    }
+    lat = Number(latRaw);
+    lng = Number(lngRaw);
+    radius = Number(radiusRaw);
+
+    if (!Number.isFinite(lat) || lat < -90 || lat > 90) {
+      return { error: "Latitud inválida (-90 a 90)", ok: false };
+    }
+    if (!Number.isFinite(lng) || lng < -180 || lng > 180) {
+      return { error: "Longitud inválida (-180 a 180)", ok: false };
+    }
+    if (!Number.isInteger(radius) || radius < 10 || radius > 100_000) {
+      return { error: "Radio inválido (10 a 100000 m)", ok: false };
+    }
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("update_group_geofence", {
+    target_group_id: groupId,
+    new_enabled: enabled,
+    new_lat: lat,
+    new_lng: lng,
+    new_radius_m: radius,
+  });
+  if (error) return { error: error.message, ok: false };
+
+  revalidatePath(`/app/groups/${groupId}/settings`);
+  revalidatePath(`/app/groups/${groupId}`);
+  return { error: null, ok: true };
+}

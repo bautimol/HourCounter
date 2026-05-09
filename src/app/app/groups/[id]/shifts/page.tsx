@@ -24,6 +24,7 @@ type ShiftRow = {
   notes: string | null;
   verified_at: string | null;
   expected_minutes: number | null;
+  within_geofence: boolean | null;
   employee_profile: {
     group_member: {
       id: string;
@@ -78,6 +79,7 @@ export default async function ShiftsListPage({
     .from("time_entries")
     .select(
       `id, clock_in, clock_out, status, notes, verified_at, expected_minutes,
+       within_geofence,
        employee_profile:employee_profiles!inner(
          group_member:group_members!inner(
            id, display_name, avatar_url, group_id, status
@@ -197,6 +199,7 @@ export default async function ShiftsListPage({
             status: s.status,
             notes: s.notes,
             verifiedAt: s.verified_at,
+            withinGeofence: s.within_geofence,
             member: s.member ?? null,
           }))}
         />

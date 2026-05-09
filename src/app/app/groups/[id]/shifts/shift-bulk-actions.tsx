@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useActionState, useState } from "react";
-import { Check, ChevronRight, ShieldCheck } from "lucide-react";
+import { Check, ChevronRight, MapPinOff, ShieldCheck } from "lucide-react";
 import {
   bulkVerifyShiftsAction,
   verifyShiftAction,
@@ -27,6 +27,7 @@ export type BulkShiftRow = {
   status: "open" | "closed" | "needs_review";
   notes: string | null;
   verifiedAt: string | null;
+  withinGeofence: boolean | null;
   member: {
     id: string;
     display_name: string | null;
@@ -184,6 +185,15 @@ export function ShiftBulkActions({
                 </div>
 
                 <div className="flex items-center gap-2">
+                  {s.withinGeofence === false && (
+                    <span
+                      title="Fichó fuera del radio o sin ubicación"
+                      className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-700 dark:text-amber-300"
+                    >
+                      <MapPinOff className="h-3 w-3" aria-hidden />
+                      Fuera
+                    </span>
+                  )}
                   {verified ? (
                     <Badge variant="accent">
                       <ShieldCheck className="mr-1 h-3 w-3" aria-hidden />

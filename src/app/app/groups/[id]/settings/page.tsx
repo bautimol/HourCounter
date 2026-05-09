@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
 import { GroupAvatarUploader } from "./group-avatar-uploader";
+import { GeofenceSection } from "./geofence-section";
 
 export default async function GroupSettingsPage({
   params,
@@ -20,7 +21,9 @@ export default async function GroupSettingsPage({
 
   const { data: group } = await supabase
     .from("groups")
-    .select("id, name, avatar_url")
+    .select(
+      "id, name, avatar_url, geofence_enabled, geofence_lat, geofence_lng, geofence_radius_m",
+    )
     .eq("id", id)
     .maybeSingle();
 
@@ -67,6 +70,22 @@ export default async function GroupSettingsPage({
           />
         </CardBody>
       </Card>
+
+      <GeofenceSection
+        groupId={id}
+        initialEnabled={!!group.geofence_enabled}
+        initialLat={
+          group.geofence_lat != null ? Number(group.geofence_lat) : null
+        }
+        initialLng={
+          group.geofence_lng != null ? Number(group.geofence_lng) : null
+        }
+        initialRadius={
+          group.geofence_radius_m != null
+            ? Number(group.geofence_radius_m)
+            : null
+        }
+      />
     </div>
   );
 }

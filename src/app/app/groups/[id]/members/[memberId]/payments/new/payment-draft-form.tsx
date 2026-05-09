@@ -174,15 +174,15 @@ export function PaymentDraftForm({
       </Card>
 
       <Card>
-        <CardBody>
-          <div className="flex items-baseline justify-between">
+        <CardBody className="py-5">
+          <div className="flex items-baseline justify-between gap-4">
             <span className="text-base font-medium">Total a pagar</span>
             <span className="text-2xl font-semibold tabular-nums">
               {formatCurrency(total, currency)}
             </span>
           </div>
           {adjTotal !== 0 && (
-            <p className="mt-1 text-right text-xs text-muted-foreground tabular-nums">
+            <p className="mt-2 text-right text-xs text-muted-foreground tabular-nums">
               Subtotal {formatCurrency(subtotalBeforeAdjustments, currency)}{" "}
               {adjTotal >= 0 ? "+ " : "− "}
               {formatCurrency(Math.abs(adjTotal), currency)} ajustes
