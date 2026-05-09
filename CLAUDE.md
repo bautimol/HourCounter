@@ -331,15 +331,26 @@ Verification flow shipped (2026-05-06). Next progression:
    `payment_adjustments`; we need the inline editor on the payment
    draft to add/remove line items (anticipos, premios, descuentos)
    before locking it in.
-3. **Global clock-out banner on `/app`** — when any of the user's
+3. **PDF de liquidación** — once a payment is locked in, generate a
+   downloadable PDF with employee + period + hours + fixed amounts +
+   adjustments + total. Highest impact-per-effort feature for the
+   informal AR segment (the kiosquero prints, signs, hands over).
+4. **Geofencing opt-in** (decided 2026-05-06) — employer settings
+   toggle + radius input + browser geolocation request at clock-in
+   + flag for "fichó fuera del radio".
+5. **Audit log** — shift_edits table with viewer in the shift detail
+   page.
+6. **Global clock-out banner on `/app`** — when any of the user's
    memberships has an open shift, banner at the top of the groups
    list with quick-close. Small but high impact.
-4. **PWA + push notifications** — install prompt + service worker +
-   FCM (or Web Push). First use cases: verification reminder for the
-   employer, "olvidaste de cerrar el turno" for the employee.
+7. **PWA + push notifications** — install prompt + service worker +
+   Web Push. First use cases: verification reminder for the employer,
+   "olvidaste de cerrar el turno" for the employee.
 
-After 1-2 ship, we have the end-to-end loop: invite → clock →
-verify → pay. Everything past that is polish/scale.
+After 1-3 ship we have the closeable loop: invite → clock → verify
+→ pay → comprobante. That's the bar for "vendible" on the feature
+side. The monetization track (see "Path to monetization") runs in
+parallel and is what gates actually charging.
 
 ### Verification flow (just shipped) — quick reference
 
@@ -406,21 +417,12 @@ but a few of their features map cleanly onto ours.)
 - **Soporte de feriados argentinos**: mapeo automático de horas
   trabajadas en feriado nacional con un multiplicador opcional por
   rol. Calendar data is public (feriados.json) and updates yearly.
-- **WhatsApp como canal de notificación** (vía WhatsApp Business
-  API o Twilio): for AR informal users, WhatsApp is the OS of the
-  local — push notifications get ignored, WhatsApp doesn't.
-  Probably more impactful than building a PWA push pipeline.
-- **Modo "dueño en el celular"**: mobile-first summary view that
-  shows just *"Hoy: 3 trabajando · 2 turnos para verificar ·
-  $48.500 acumulado esta semana"*. The kiosquero looks at that, not
-  a dashboard.
-- **Export a Excel / Google Sheets** del histórico de pagos para
-  el contador / monotributo.
 - **Audit log** of shift edits (who edited what shift when). Solves
   the "el empleado dice X, el sistema dice otra cosa" objection.
-- **Rounding policy** per group (round shifts to nearest 5 min,
-  closest 15 min, etc.) so pay calc isn't cents-off and cause
-  arguments.
+  ✅ Decided 2026-05-06: yes, build it.
+- **Onboarding plantilla** "Mi primer local en 2 minutos": pre-load
+  a group with 2 typical AR roles + invite link. ✅ Decided
+  2026-05-06: yes, but later (after monetization track is moving).
 
 ### Sin decidir todavía
 
@@ -467,26 +469,35 @@ These were considered but explicitly excluded:
 - **Heavy integrations** (Slack, Jira, Salesforce, etc.): not where
   this market lives.
 - **Apps nativas iOS/Android**: PWA covers it. Maintaining two
-  native codebases is not justified for the audience.
+  native codebases is not justified for the audience. The same web
+  app we ship to desktop covers mobile via responsive design — no
+  separate "modo dueño" build is needed.
+- **WhatsApp as a notification channel** (decided 2026-05-06): push
+  is enough, WhatsApp Business API adds friction (per-message cost,
+  approval flow) we don't need yet. Maybe revisit if push fails.
+- **Excel / Google Sheets export** (decided 2026-05-06): the contador
+  workflow doesn't justify the work. Use the in-app reports + PDF.
+- **Per-group rounding policy** (decided 2026-05-06): rounding shifts
+  to the nearest 5/15 min systematically reduces what the employee
+  earns when they're past the threshold — it's a hidden tax on the
+  employee. Pay calculation stays exact-to-the-second and the per-
+  shift edit flow handles the "se fue 4 minutos antes" cases.
 
-### Reabrir (decisión a revisar)
+### Decided to build (from 2026-05-06 cold review)
 
-A 2026-05-06 cold review proposed splitting our blanket "no
-surveillance" rule:
-
-- **Geofencing opt-in** (employer toggles per group, with a clearly
-  visible radius around the local).
-- **Foto opcional al clock-in** (selfie at the moment of clocking
-  in, NOT continuous capture).
-
-Framing: this is "transparente, opt-in, una sola vez por turno",
-qualitatively different from Hubstaff-style continuous monitoring.
-For gastronomía / local físico, the dueño's "se quedó en la casa
-fichando" objection is real and these features cleanly answer it
-without invading employee privacy.
-
-Pending decision — keep blanket exclusion, or carve out the
-opt-in transparent variant?
+- **Geofencing as employer-side opt-in**: employer toggles a radius
+  around the local; if enabled, the clock-in form requests browser
+  geolocation and refuses (or flags) clocks outside the radius. The
+  employee sees the radius up front. Framed as "transparent, opt-in,
+  one-time per shift" — explicitly NOT continuous tracking. Resolves
+  the realistic dueño objection "se quedó en su casa fichando" without
+  becoming surveillance.
+- **Modelo comercial track** (pricing page, MercadoPago Subscriptions
+  in pesos, /legal). Now treated as gating "vendible" status; not a
+  feature, but blocks monetization. See "Path to monetization" above.
+- **Audit log of shift edits**: every employer / employee edit on a
+  shift writes a row (who, when, what changed). Surfaces in the
+  shift detail page so disputes have a paper trail.
 
 ## Pointers
 
