@@ -4,6 +4,7 @@ import {
   Coins,
   FileText,
   Pencil,
+  Receipt,
   ScrollText,
   Settings,
 } from "lucide-react";
@@ -196,22 +197,33 @@ export default async function MemberDetailPage({
             </div>
           </div>
           {member.role === "employee" && member.status === "active" && (
-            <Link
-              href={`/app/groups/${id}/members/${memberId}/edit`}
-              className="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-muted"
-            >
-              {profile ? (
-                <>
-                  <Pencil className="h-4 w-4" aria-hidden />
-                  Editar
-                </>
-              ) : (
-                <>
-                  <Settings className="h-4 w-4" aria-hidden />
-                  Configurar perfil
-                </>
+            <div className="flex flex-wrap items-center gap-2">
+              {profile && (
+                <Link
+                  href={`/app/groups/${id}/members/${memberId}/payments/new`}
+                  className="inline-flex items-center gap-1.5 rounded-md bg-accent px-3 py-2 text-sm font-medium text-accent-foreground shadow-sm shadow-emerald-700/25 ring-1 ring-inset ring-white/15 transition-opacity hover:opacity-90"
+                >
+                  <Receipt className="h-4 w-4" aria-hidden />
+                  Liquidar pago
+                </Link>
               )}
-            </Link>
+              <Link
+                href={`/app/groups/${id}/members/${memberId}/edit`}
+                className="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-muted"
+              >
+                {profile ? (
+                  <>
+                    <Pencil className="h-4 w-4" aria-hidden />
+                    Editar
+                  </>
+                ) : (
+                  <>
+                    <Settings className="h-4 w-4" aria-hidden />
+                    Configurar perfil
+                  </>
+                )}
+              </Link>
+            </div>
           )}
         </div>
       </section>

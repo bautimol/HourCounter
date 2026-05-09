@@ -208,7 +208,8 @@ HourCounter/
 │       ├── 0009_time_tracking.sql         drops profile-completeness check, adds time_entries.expected_minutes + one-open-shift unique index, RPCs clock_in/clock_out/auto_close_expired_shifts/update_my_time_entry
 │       ├── 0010_avatars.sql               group_members.avatar_url + update_my_avatar(); manual setup notes for the public `avatars` Storage bucket
 │       ├── 0011_group_avatars.sql         groups.avatar_url + update_group_avatar() (employer-gated); reuses the same `avatars` bucket under groups/<groupId>/...
-│       └── 0012_shift_verification.sql    verify_shift / unverify_shift / employer_update_shift / verify_shifts_bulk RPCs
+│       ├── 0012_shift_verification.sql    verify_shift / unverify_shift / employer_update_shift / verify_shifts_bulk RPCs
+│       └── 0013_payment_calculation.sql   calculate_pay_draft (read) + create_payment (atomic insert + adjustments + one_shot deactivation) + delete-policy on payments
 ├── .env.local                      Supabase URL + anon key (gitignored)
 ├── .env.local.example              template
 ├── package.json
@@ -242,8 +243,9 @@ HourCounter/
 | "Trabajando" indicator on members list      | ✅ done        |
 | Global clock-out banner on /app             | ⏳ pending     |
 | Verification flow (employer reviews shifts) | ✅ done        |
-| Payment calculation + recording             | ⏳ pending     |
-| Payment adjustments (one-shot)              | ⏳ pending     |
+| Payment calculation + recording             | ✅ done        |
+| Payment adjustments (one-shot)              | ✅ done        |
+| PDF de liquidación (via window.print)       | ✅ done        |
 | Push notifications                          | ⏳ pending     |
 | QR code for invitations                     | ⏳ nice-to-have |
 | Multi-employer per group (UI)               | ⏳ schema OK, UI pending |
@@ -321,36 +323,54 @@ Supabase config required:
 
 ## Próximo en la agenda
 
-Verification flow shipped (2026-05-06). Next progression:
+End-to-end loop closed (2026-05-06): invite → clock → verify → pay
+→ printable comprobante. Now the work splits into two parallel tracks.
 
-1. **Payment calculation** — for a given employee + period, sum
-   verified hours × effective rate + applicable fixed amounts (taking
-   into account `frequency` per amount). Produce a draft `payments`
-   row the employer can review.
-2. **Payment adjustments UI** — schema already has
-   `payment_adjustments`; we need the inline editor on the payment
-   draft to add/remove line items (anticipos, premios, descuentos)
-   before locking it in.
-3. **PDF de liquidación** — once a payment is locked in, generate a
-   downloadable PDF with employee + period + hours + fixed amounts +
-   adjustments + total. Highest impact-per-effort feature for the
-   informal AR segment (the kiosquero prints, signs, hands over).
-4. **Geofencing opt-in** (decided 2026-05-06) — employer settings
+### Feature track (continue building)
+
+1. **Geofencing opt-in** (decided 2026-05-06) — employer settings
    toggle + radius input + browser geolocation request at clock-in
    + flag for "fichó fuera del radio".
-5. **Audit log** — shift_edits table with viewer in the shift detail
+2. **Audit log** — shift_edits table with viewer in the shift detail
    page.
-6. **Global clock-out banner on `/app`** — when any of the user's
+3. **Global clock-out banner on `/app`** — when any of the user's
    memberships has an open shift, banner at the top of the groups
    list with quick-close. Small but high impact.
-7. **PWA + push notifications** — install prompt + service worker +
+4. **PWA + push notifications** — install prompt + service worker +
    Web Push. First use cases: verification reminder for the employer,
    "olvidaste de cerrar el turno" for the employee.
+5. **Reportes mínimos** — "cuánto le pagué a X este mes/año",
+   "horas totales del local", comparativa mes-a-mes.
+6. **Onboarding plantilla** "Mi primer local en 2 minutos".
 
-After 1-3 ship we have the closeable loop: invite → clock → verify
-→ pay → comprobante. That's the bar for "vendible" on the feature
-side. The monetization track (see "Path to monetization") runs in
-parallel and is what gates actually charging.
+### Monetization track (in parallel — gates "vendible")
+
+See "Path to monetization" section. Pricing decision, MercadoPago
+integration, /legal pages, custom domain + Sentry/Resend/PostHog.
+This track requires business decisions Juan needs to make
+(precio/empleado, plan free, ToS) — engineering can't unilaterally
+move it forward.
+
+### Payment loop (just shipped) — quick reference
+
+- `calculate_pay_draft(profile_id, start, end)` — pure read,
+  returns JSON breakdown. Per-frequency rules:
+  per_period × 1, per_day_worked × days with verified shifts,
+  every_n_days × floor(days_in_period/n), one_shot × 1.
+- `create_payment(profile_id, start, end, adjustments_jsonb, notes)`
+  — atomic insert. Re-runs the calc server-side (never trusts client
+  totals), inserts payments + payment_adjustments rows, deactivates
+  one_shot fixed_amounts so they don't reapply.
+- UI: `/app/groups/[id]/members/[memberId]/payments/new` (draft +
+  adjustments editor + confirm) → `/app/groups/[id]/payments/
+  [paymentId]` (locked detail with print stylesheet) →
+  `/app/groups/[id]/payments` (group-wide list).
+- Default period = end of last payment → now (or first verified
+  shift → now if no prior payment).
+- PDF: `window.print()` + a `@media print` stylesheet that hides
+  the chrome and renders just the receipt with signature lines.
+  Lighter than puppeteer / react-pdf and good enough for the
+  segment. Revisit if branding needs grow.
 
 ### Verification flow (just shipped) — quick reference
 

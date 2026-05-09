@@ -285,6 +285,13 @@ export default async function GroupDetailPage({
                 )}
               </Link>
               <Link
+                href={`/app/groups/${id}/payments`}
+                className="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-muted"
+              >
+                <Coins className="h-4 w-4" aria-hidden />
+                Pagos
+              </Link>
+              <Link
                 href={`/app/groups/${id}/settings`}
                 className="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-muted"
                 title="Configuración del grupo"
@@ -433,18 +440,7 @@ export default async function GroupDetailPage({
         </>
       )}
 
-      {isEmployer ? (
-        <ComingSoonGrid
-          title="Próximamente para empleadores"
-          items={[
-            {
-              icon: <Coins className="h-4 w-4" aria-hidden />,
-              title: "Calcular pagos",
-              description: "Total acumulado desde el último pago, listo para liquidar.",
-            },
-          ]}
-        />
-      ) : (
+      {!isEmployer && (
         <ComingSoonGrid
           title="Próximamente para empleados"
           items={[
