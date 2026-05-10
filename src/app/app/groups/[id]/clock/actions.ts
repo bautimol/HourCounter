@@ -44,12 +44,19 @@ export async function clockInAction(
   const validLat = lat !== null && Number.isFinite(lat) && lat >= -90 && lat <= 90;
   const validLng = lng !== null && Number.isFinite(lng) && lng >= -180 && lng <= 180;
 
+  // Click timestamp from the browser. The DB validates it to ±60s and
+  // falls back to server now() if outside the window. See migration 0017.
+  const clientClickIso = String(formData.get("client_click_iso") ?? "").trim();
+  const validClick =
+    clientClickIso !== "" && !Number.isNaN(new Date(clientClickIso).getTime());
+
   const supabase = await createClient();
   const { error } = await supabase.rpc("clock_in", {
     target_group_id: groupId,
     target_expected_minutes: expectedMinutes,
     target_lat: validLat ? lat : null,
     target_lng: validLng ? lng : null,
+    target_clock_in_iso: validClick ? clientClickIso : null,
   });
 
   if (error) {
@@ -68,10 +75,15 @@ export async function clockOutAction(
 ): Promise<ClockState> {
   const notes = String(formData.get("notes") ?? "").trim();
 
+  const clientClickIso = String(formData.get("client_click_iso") ?? "").trim();
+  const validClick =
+    clientClickIso !== "" && !Number.isNaN(new Date(clientClickIso).getTime());
+
   const supabase = await createClient();
   const { error } = await supabase.rpc("clock_out", {
     target_group_id: groupId,
     notes_text: notes || null,
+    target_clock_out_iso: validClick ? clientClickIso : null,
   });
 
   if (error) {

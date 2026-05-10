@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { MapPin, Play, Square, Timer } from "lucide-react";
 import {
   clockInAction,
@@ -136,12 +136,24 @@ function ClockInForm({
   const action = clockInAction.bind(null, groupId);
   const [state, formAction] = useActionState(action, initialState);
   const geo = useGeolocation(geofenceEnabled);
+  const clickTsRef = useRef<HTMLInputElement>(null);
 
   const lat = geo.status === "ok" ? geo.lat.toFixed(6) : "";
   const lng = geo.status === "ok" ? geo.lng.toFixed(6) : "";
 
   return (
-    <form action={formAction} className="space-y-5">
+    <form
+      action={formAction}
+      onSubmit={() => {
+        // Capture the click moment so the DB can use it as clock_in (validated
+        // to ±60s of server now). Avoids the timer "starting at 0:00:40" when
+        // the request takes a few seconds to round-trip — see migration 0017.
+        if (clickTsRef.current) {
+          clickTsRef.current.value = new Date().toISOString();
+        }
+      }}
+      className="space-y-5"
+    >
       <p className="text-sm text-muted-foreground">
         Iniciá tu turno. Si decís cuánto vas a trabajar, se cierra solo al
         cumplirse el tiempo (lo podés editar después).
@@ -153,6 +165,12 @@ function ClockInForm({
 
       <input type="hidden" name="clock_in_lat" value={lat} />
       <input type="hidden" name="clock_in_lng" value={lng} />
+      <input
+        ref={clickTsRef}
+        type="hidden"
+        name="client_click_iso"
+        defaultValue=""
+      />
 
 
       <div>
@@ -225,6 +243,7 @@ function ClockOutForm({
 }) {
   const action = clockOutAction.bind(null, groupId);
   const [state, formAction] = useActionState(action, initialState);
+  const clickTsRef = useRef<HTMLInputElement>(null);
 
   const startTs = new Date(openShift.clockInIso).getTime();
   const expectedEndTs =
@@ -243,7 +262,21 @@ function ClockOutForm({
           : ""}
       </p>
 
-      <form action={formAction} className="space-y-4">
+      <form
+        action={formAction}
+        onSubmit={() => {
+          if (clickTsRef.current) {
+            clickTsRef.current.value = new Date().toISOString();
+          }
+        }}
+        className="space-y-4"
+      >
+        <input
+          ref={clickTsRef}
+          type="hidden"
+          name="client_click_iso"
+          defaultValue=""
+        />
         <Field>
           <Label htmlFor="notes">Notas (opcional)</Label>
           <textarea

@@ -212,7 +212,8 @@ HourCounter/
 │       ├── 0013_payment_calculation.sql   calculate_pay_draft (read) + create_payment (atomic insert + adjustments + one_shot deactivation) + delete-policy on payments
 │       ├── 0014_geofence.sql               groups.geofence_* + time_entries.{clock_in_lat,lng,within_geofence} + haversine_meters() + update_group_geofence() + clock_in() recreated to take optional lat/lng
 │       ├── 0015_audit_log.sql              shift_edits table + record_shift_edit() helper; recreates update_my_time_entry / employer_update_shift / verify_shift / unverify_shift / verify_shifts_bulk to write audit rows
-│       └── 0016_employee_notes_only.sql    drops clock_out param from update_my_time_entry — employee self-edit is notes-only now (employer is sole source of truth for shift times)
+│       ├── 0016_employee_notes_only.sql    drops clock_out param from update_my_time_entry — employee self-edit is notes-only now (employer is sole source of truth for shift times)
+│       └── 0017_client_timestamps.sql      clock_in / clock_out accept an optional target_*_iso from the client. The server uses it only when within ±60s of its own now() (anti-cheat window) — eliminates the "timer starts at 0:00:40" perception of click→DB latency without trusting the client
 ├── .env.local                      Supabase URL + anon key (gitignored)
 ├── .env.local.example              template
 ├── package.json
