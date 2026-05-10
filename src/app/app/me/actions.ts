@@ -115,3 +115,73 @@ export async function clearMyAvatarAction(): Promise<UpdateMyAvatarState> {
   revalidatePath("/app", "layout");
   return { error: null, ok: true };
 }
+
+// ---------------------------------------------------------------------------
+// Push subscriptions
+// ---------------------------------------------------------------------------
+
+export type PushSubState = {
+  error: string | null;
+  ok: boolean;
+};
+
+/**
+ * Persists a PushSubscription that the browser obtained via
+ * registration.pushManager.subscribe(). Idempotent on (user_id, endpoint).
+ */
+export async function subscribeToPushAction(
+  _prevState: PushSubState,
+  formData: FormData,
+): Promise<PushSubState> {
+  const endpoint = String(formData.get("endpoint") ?? "").trim();
+  const p256dh = String(formData.get("p256dh") ?? "").trim();
+  const authKey = String(formData.get("auth") ?? "").trim();
+  const userAgent = String(formData.get("user_agent") ?? "").trim() || null;
+
+  if (!endpoint || !p256dh || !authKey) {
+    return { error: "Faltan datos de la suscripción", ok: false };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Sesión expirada", ok: false };
+
+  const { error } = await supabase.from("push_subscriptions").upsert(
+    {
+      user_id: user.id,
+      endpoint,
+      keys_p256dh: p256dh,
+      keys_auth: authKey,
+      user_agent: userAgent,
+    },
+    { onConflict: "user_id,endpoint" },
+  );
+
+  if (error) return { error: error.message, ok: false };
+  return { error: null, ok: true };
+}
+
+export async function unsubscribeFromPushAction(
+  _prevState: PushSubState,
+  formData: FormData,
+): Promise<PushSubState> {
+  const endpoint = String(formData.get("endpoint") ?? "").trim();
+  if (!endpoint) return { error: "Falta endpoint", ok: false };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Sesión expirada", ok: false };
+
+  const { error } = await supabase
+    .from("push_subscriptions")
+    .delete()
+    .eq("user_id", user.id)
+    .eq("endpoint", endpoint);
+
+  if (error) return { error: error.message, ok: false };
+  return { error: null, ok: true };
+}

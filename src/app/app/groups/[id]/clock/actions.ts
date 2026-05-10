@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { sendPushToUsers } from "@/lib/push";
 
 export type ClockState = {
   error: string | null;
@@ -92,5 +93,49 @@ export async function clockOutAction(
 
   revalidatePath(`/app/groups/${groupId}`);
   revalidatePath("/app");
+
+  // Notify the group's employers that there's a fresh shift to verify.
+  // Best-effort: never block the response on push delivery; never bubble
+  // failures back to the user.
+  try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    const [{ data: group }, { data: myMembership }, { data: employers }] =
+      await Promise.all([
+        supabase.from("groups").select("name").eq("id", groupId).maybeSingle(),
+        supabase
+          .from("group_members")
+          .select("display_name")
+          .eq("group_id", groupId)
+          .eq("user_id", user!.id)
+          .maybeSingle(),
+        supabase
+          .from("group_members")
+          .select("user_id")
+          .eq("group_id", groupId)
+          .eq("role", "employer")
+          .eq("status", "active"),
+      ]);
+
+    const employeeName = myMembership?.display_name ?? "Un empleado";
+    const groupName = group?.name ?? "el grupo";
+    const targets = (employers ?? [])
+      .map((e) => e.user_id)
+      .filter((id): id is string => Boolean(id) && id !== user?.id);
+
+    if (targets.length > 0) {
+      await sendPushToUsers(targets, {
+        title: groupName,
+        body: `${employeeName} cerró un turno`,
+        url: `/app/groups/${groupId}/shifts`,
+        tag: `shift-closed-${groupId}`,
+      });
+    }
+  } catch {
+    // Swallow — push is fire-and-forget.
+  }
+
   return { error: null };
 }

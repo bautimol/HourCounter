@@ -4,6 +4,7 @@ import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
 import { DisplayNameForm } from "./display-name-form";
 import { AvatarUploader } from "./avatar-uploader";
+import { PushSection } from "./push-section";
 
 export default async function MyProfilePage() {
   const supabase = await createClient();
@@ -55,6 +56,10 @@ export default async function MyProfilePage() {
           <DisplayNameForm current={currentName} />
         </CardBody>
       </Card>
+
+      <PushSection
+        vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null}
+      />
     </div>
   );
 }

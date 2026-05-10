@@ -168,6 +168,7 @@ HourCounter/
 │   │   └── page.tsx                marketing landing for non-logged users
 │   │                                (logged-in users get redirect → /app)
 │   ├── components/
+│   │   ├── sw-register.tsx         registers public/sw.js on mount (idle)
 │   │   ├── ui/                     reusable primitives
 │   │   │   ├── avatar.tsx          image-or-initials, deterministic palette
 │   │   │   ├── badge.tsx
@@ -190,6 +191,7 @@ HourCounter/
 │   ├── lib/
 │   │   ├── cn.ts                   clsx + tailwind-merge
 │   │   ├── format.ts               domain display helpers (period, currency, frequency)
+│   │   ├── push.ts                 server-side Web Push helper (sendPushToUser/Users)
 │   │   └── supabase/
 │   │       ├── client.ts           browser client
 │   │       ├── server.ts           server client (RSC, actions)
@@ -213,7 +215,8 @@ HourCounter/
 │       ├── 0014_geofence.sql               groups.geofence_* + time_entries.{clock_in_lat,lng,within_geofence} + haversine_meters() + update_group_geofence() + clock_in() recreated to take optional lat/lng
 │       ├── 0015_audit_log.sql              shift_edits table + record_shift_edit() helper; recreates update_my_time_entry / employer_update_shift / verify_shift / unverify_shift / verify_shifts_bulk to write audit rows
 │       ├── 0016_employee_notes_only.sql    drops clock_out param from update_my_time_entry — employee self-edit is notes-only now (employer is sole source of truth for shift times)
-│       └── 0017_client_timestamps.sql      clock_in / clock_out accept an optional target_*_iso from the client. The server uses it only when within ±60s of its own now() (anti-cheat window) — eliminates the "timer starts at 0:00:40" perception of click→DB latency without trusting the client
+│       ├── 0017_client_timestamps.sql      clock_in / clock_out accept an optional target_*_iso from the client. The server uses it only when within ±60s of its own now() (anti-cheat window) — eliminates the "timer starts at 0:00:40" perception of click→DB latency without trusting the client
+│       └── 0018_push_subscriptions.sql     push_subscriptions(user_id, endpoint, keys_p256dh, keys_auth, user_agent) + RLS (users manage their own); src/lib/push.ts deletes subs that the push service rejects (404/410)
 ├── .env.local                      Supabase URL + anon key (gitignored)
 ├── .env.local.example              template
 ├── package.json
@@ -252,7 +255,8 @@ HourCounter/
 | PDF de liquidación (via window.print)       | ✅ done        |
 | Geofencing opt-in (employer toggle + flag)  | ✅ done        |
 | Audit log of shift edits (who/when/what)    | ✅ done        |
-| Push notifications                          | ⏳ pending     |
+| Push notifications (PWA + Web Push)         | ✅ done        |
+| PWA install (manifest + icons + SW)         | ✅ done        |
 | QR code for invitations                     | ⏳ nice-to-have |
 | Multi-employer per group (UI)               | ⏳ schema OK, UI pending |
 | Archive employee                            | ⏳ schema OK, UI pending |
@@ -319,6 +323,15 @@ Supabase config required:
   - Redirect URLs: `http://localhost:3000/auth/confirm`
 - (Optional for dev) Auth → Providers → Email: disable "Confirm email".
 
+For push notifications:
+- Generate VAPID keys: `npx web-push generate-vapid-keys`
+- Set in `.env.local`: `VAPID_SUBJECT`, `VAPID_PUBLIC_KEY`,
+  `VAPID_PRIVATE_KEY`, `NEXT_PUBLIC_VAPID_PUBLIC_KEY` (same as
+  VAPID_PUBLIC_KEY, exposed to client).
+- Push works on localhost over http for testing; production needs
+  HTTPS for service worker registration.
+- iOS: push only works inside an installed PWA (Safari 16.4+).
+
 ## Things to know about Next.js 16 in this repo
 
 - `middleware.ts` does not exist — use `proxy.ts` (root or `src/`).
@@ -334,9 +347,9 @@ End-to-end loop closed (2026-05-06): invite → clock → verify → pay
 
 ### Feature track (continue building)
 
-1. **PWA + push notifications** — install prompt + service worker +
-   Web Push. First use cases: verification reminder for the employer,
-   "olvidaste de cerrar el turno" for the employee.
+1. **More push triggers** — currently only `clockOutAction` notifies
+   employers. Add: `verify_shift` → notify employee (?), reminder
+   "olvidaste cerrar" via cron (needs pg_cron or external scheduler).
 2. **Reportes mínimos** — "cuánto le pagué a X este mes/año",
    "horas totales del local", comparativa mes-a-mes.
 3. **Onboarding plantilla** "Mi primer local en 2 minutos".
