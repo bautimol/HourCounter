@@ -245,7 +245,7 @@ HourCounter/
 | Self-edit unverified shifts (notes-only)    | ✅ done        |
 | Today's worked hours (live)                 | ✅ done        |
 | "Trabajando" indicator on members list      | ✅ done        |
-| Global clock-out banner on /app             | ⏳ pending     |
+| Global clock-out banner on /app             | ✅ done        |
 | Verification flow (employer reviews shifts) | ✅ done        |
 | Payment calculation + recording             | ✅ done        |
 | Payment adjustments (one-shot)              | ✅ done        |
@@ -334,15 +334,12 @@ End-to-end loop closed (2026-05-06): invite → clock → verify → pay
 
 ### Feature track (continue building)
 
-1. **Global clock-out banner on `/app`** — when any of the user's
-   memberships has an open shift, banner at the top of the groups
-   list with quick-close. Small but high impact.
-2. **PWA + push notifications** — install prompt + service worker +
+1. **PWA + push notifications** — install prompt + service worker +
    Web Push. First use cases: verification reminder for the employer,
    "olvidaste de cerrar el turno" for the employee.
-3. **Reportes mínimos** — "cuánto le pagué a X este mes/año",
+2. **Reportes mínimos** — "cuánto le pagué a X este mes/año",
    "horas totales del local", comparativa mes-a-mes.
-4. **Onboarding plantilla** "Mi primer local en 2 minutos".
+3. **Onboarding plantilla** "Mi primer local en 2 minutos".
 
 ### Monetization track (in parallel — gates "vendible")
 

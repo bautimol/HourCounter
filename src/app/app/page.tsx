@@ -8,6 +8,26 @@ import { Badge } from "@/components/ui/badge";
 import { SpotlightCard } from "@/components/ui/spotlight-card";
 import { PageHeader } from "@/components/page-header";
 import { MotionList, MotionListItem } from "@/components/motion-list";
+import {
+  OpenShiftBanner,
+  type OpenShiftSummary,
+} from "./open-shift-banner";
+
+type OpenShiftRow = {
+  id: string;
+  clock_in: string;
+  employee_profile: {
+    group_member: {
+      group_id: string;
+      user_id: string;
+      group: {
+        id: string;
+        name: string;
+        avatar_url: string | null;
+      } | null;
+    } | null;
+  } | null;
+};
 
 export default async function AppHomePage() {
   const supabase = await createClient();
@@ -15,6 +35,10 @@ export default async function AppHomePage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  // Sweep stale shifts so a banner never shows for a shift that should have
+  // auto-closed by now.
+  await supabase.rpc("auto_close_expired_shifts");
 
   const { data: memberships, error } = await supabase
     .from("group_members")
@@ -25,8 +49,52 @@ export default async function AppHomePage() {
     .eq("status", "active")
     .order("joined_at", { ascending: false });
 
+  // Open shifts across every group the user belongs to. Drives the
+  // global "Trabajando en X" banner above the groups list.
+  const { data: rawOpen } = await supabase
+    .from("time_entries")
+    .select(
+      `id, clock_in,
+       employee_profile:employee_profiles!inner(
+         group_member:group_members!inner(
+           group_id, user_id,
+           group:groups(id, name, avatar_url)
+         )
+       )`,
+    )
+    .eq("status", "open")
+    .eq("employee_profile.group_member.user_id", user!.id);
+
+  const openShifts: OpenShiftSummary[] = ((rawOpen ?? []) as unknown as OpenShiftRow[])
+    .map((row) => {
+      const ep = Array.isArray(row.employee_profile)
+        ? row.employee_profile[0]
+        : row.employee_profile;
+      const gm = ep
+        ? Array.isArray(ep.group_member)
+          ? ep.group_member[0]
+          : ep.group_member
+        : null;
+      const group = gm
+        ? Array.isArray(gm.group)
+          ? gm.group[0]
+          : gm.group
+        : null;
+      if (!group) return null;
+      return {
+        shiftId: row.id,
+        groupId: group.id,
+        groupName: group.name,
+        groupAvatarUrl: group.avatar_url ?? null,
+        clockInIso: row.clock_in,
+      };
+    })
+    .filter((x): x is OpenShiftSummary => x !== null);
+
   return (
     <div className="space-y-8">
+      <OpenShiftBanner shifts={openShifts} />
+
       <PageHeader
         title={
           <span>
