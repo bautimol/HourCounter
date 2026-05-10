@@ -8,28 +8,23 @@ export type EditShiftState = {
   error: string | null;
 };
 
+/**
+ * Self-edit by the employee. Restricted to notes only — clock_out is the
+ * employer's responsibility (see migration 0016 + the form rationale).
+ * If the system-recorded clock_out is wrong, the employee writes a note
+ * and the employer adjusts at verification time.
+ */
 export async function updateShiftAction(
   groupId: string,
   shiftId: string,
   _prevState: EditShiftState,
   formData: FormData,
 ): Promise<EditShiftState> {
-  const clockOutIso = String(formData.get("clock_out_iso") ?? "").trim();
   const notes = String(formData.get("notes") ?? "");
-
-  if (!clockOutIso) {
-    return { error: "Hora de salida obligatoria" };
-  }
-
-  const parsed = new Date(clockOutIso);
-  if (Number.isNaN(parsed.getTime())) {
-    return { error: "Hora de salida inválida" };
-  }
 
   const supabase = await createClient();
   const { error } = await supabase.rpc("update_my_time_entry", {
     entry_id: shiftId,
-    new_clock_out: parsed.toISOString(),
     new_notes: notes,
   });
 

@@ -1,9 +1,13 @@
 import { notFound, redirect } from "next/navigation";
-import { Pencil } from "lucide-react";
+import { MessageSquare } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardBody } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
-import { formatShortDate, formatTimeOfDay } from "@/lib/format";
+import {
+  formatDuration,
+  formatShortDate,
+  formatTimeOfDay,
+} from "@/lib/format";
 import { EditShiftForm } from "./edit-shift-form";
 
 export default async function EditShiftPage({
@@ -41,8 +45,6 @@ export default async function EditShiftPage({
 
   if (!shift) notFound();
 
-  // Hop through the joins, collapsing array vs object that the typings
-  // produce when no DB types are generated.
   const ep = Array.isArray(shift.employee_profile)
     ? shift.employee_profile[0]
     : shift.employee_profile;
@@ -63,6 +65,9 @@ export default async function EditShiftPage({
   }
 
   const start = new Date(shift.clock_in);
+  const end = shift.clock_out ? new Date(shift.clock_out) : null;
+  const durationMs =
+    end != null ? end.getTime() - start.getTime() : null;
 
   return (
     <div className="mx-auto max-w-md space-y-8">
@@ -70,22 +75,47 @@ export default async function EditShiftPage({
         crumbs={[
           { label: "Tus grupos", href: "/app" },
           { label: group.name, href: `/app/groups/${id}` },
-          { label: "Editar turno" },
+          { label: "Nota del turno" },
         ]}
-        title="Editar turno"
+        title="Agregar nota al turno"
         subtitle={`${formatShortDate(start)} · entrada a las ${formatTimeOfDay(start)}`}
-        icon={<Pencil className="h-5 w-5" aria-hidden />}
+        icon={<MessageSquare className="h-5 w-5" aria-hidden />}
         accent="emerald"
       />
+
+      {/* Read-only context: the recorded times. The employee can no longer
+          edit clock_out — they leave a note and the employer adjusts. */}
+      <Card>
+        <CardBody className="space-y-2 py-4 text-sm">
+          <div className="flex items-baseline justify-between">
+            <span className="text-muted-foreground">Entrada</span>
+            <span className="tabular-nums">
+              {formatTimeOfDay(start)}
+            </span>
+          </div>
+          <div className="flex items-baseline justify-between">
+            <span className="text-muted-foreground">Salida</span>
+            <span className="tabular-nums">
+              {end ? formatTimeOfDay(end) : "—"}
+            </span>
+          </div>
+          {durationMs != null && (
+            <div className="flex items-baseline justify-between border-t border-border pt-2">
+              <span className="text-muted-foreground">Total</span>
+              <span className="font-medium tabular-nums">
+                {formatDuration(durationMs)}
+              </span>
+            </div>
+          )}
+        </CardBody>
+      </Card>
 
       <Card>
         <CardBody>
           <EditShiftForm
             groupId={id}
             shiftId={shiftId}
-            initialClockOutIso={shift.clock_out ?? new Date().toISOString()}
             initialNotes={shift.notes ?? ""}
-            minIso={shift.clock_in}
           />
         </CardBody>
       </Card>

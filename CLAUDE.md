@@ -211,7 +211,8 @@ HourCounter/
 │       ├── 0012_shift_verification.sql    verify_shift / unverify_shift / employer_update_shift / verify_shifts_bulk RPCs
 │       ├── 0013_payment_calculation.sql   calculate_pay_draft (read) + create_payment (atomic insert + adjustments + one_shot deactivation) + delete-policy on payments
 │       ├── 0014_geofence.sql               groups.geofence_* + time_entries.{clock_in_lat,lng,within_geofence} + haversine_meters() + update_group_geofence() + clock_in() recreated to take optional lat/lng
-│       └── 0015_audit_log.sql              shift_edits table + record_shift_edit() helper; recreates update_my_time_entry / employer_update_shift / verify_shift / unverify_shift / verify_shifts_bulk to write audit rows
+│       ├── 0015_audit_log.sql              shift_edits table + record_shift_edit() helper; recreates update_my_time_entry / employer_update_shift / verify_shift / unverify_shift / verify_shifts_bulk to write audit rows
+│       └── 0016_employee_notes_only.sql    drops clock_out param from update_my_time_entry — employee self-edit is notes-only now (employer is sole source of truth for shift times)
 ├── .env.local                      Supabase URL + anon key (gitignored)
 ├── .env.local.example              template
 ├── package.json
@@ -240,7 +241,7 @@ HourCounter/
 | Group avatar (employer-only)                | ✅ done        |
 | Clock in / out (employee side)              | ✅ done        |
 | Auto-close after expected_minutes (lazy)    | ✅ done        |
-| Self-edit unverified shifts                 | ✅ done        |
+| Self-edit unverified shifts (notes-only)    | ✅ done        |
 | Today's worked hours (live)                 | ✅ done        |
 | "Trabajando" indicator on members list      | ✅ done        |
 | Global clock-out banner on /app             | ⏳ pending     |
@@ -475,6 +476,14 @@ but a few of their features map cleanly onto ours.)
 - **Live link vs snapshot for fixed amounts** (2026-05-05): scalar
   fields are live-link, fixed-amounts list is snapshot. Bulk
   propagation is opt-in and TBD.
+- **Employee can NOT edit shift times** (2026-05-07, raised by
+  Bautista's testing): the previous "employee can edit clock_out
+  before verification" let the employee inflate hours by bumping
+  clock_out forward. Now the employee can only edit `notes`. If the
+  recorded clock_out is wrong (typically because they forgot to
+  close and the auto-close fired), they leave a note explaining,
+  and the employer adjusts at verification time. Employer is the
+  sole source of truth for shift times. See migration 0016.
 
 ### Out of scope (won't build)
 

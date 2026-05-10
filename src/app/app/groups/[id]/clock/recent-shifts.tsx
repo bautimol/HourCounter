@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Pencil, ShieldCheck } from "lucide-react";
+import { MessageSquare, ShieldCheck } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { MotionList, MotionListItem } from "@/components/motion-list";
 import {
@@ -74,9 +74,10 @@ export function RecentShiftsList({
                   <Link
                     href={`/app/groups/${groupId}/shifts/${s.id}/edit`}
                     className="inline-flex items-center gap-1 rounded-md border border-border bg-surface px-2 py-1 text-xs text-foreground transition-colors hover:bg-surface-muted"
+                    title="Si la hora está mal, dejá una nota para tu empleador"
                   >
-                    <Pencil className="h-3 w-3" aria-hidden />
-                    Editar
+                    <MessageSquare className="h-3 w-3" aria-hidden />
+                    {s.notes ? "Editar nota" : "Agregar nota"}
                   </Link>
                 )}
               </div>
