@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
+  BarChart3,
   Briefcase,
   ChevronRight,
   ClipboardCheck,
@@ -290,6 +291,13 @@ export default async function GroupDetailPage({
               >
                 <Coins className="h-4 w-4" aria-hidden />
                 Pagos
+              </Link>
+              <Link
+                href={`/app/groups/${id}/reports`}
+                className="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-muted"
+              >
+                <BarChart3 className="h-4 w-4" aria-hidden />
+                Reportes
               </Link>
               <Link
                 href={`/app/groups/${id}/settings`}

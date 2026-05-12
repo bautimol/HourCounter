@@ -257,6 +257,7 @@ HourCounter/
 | Audit log of shift edits (who/when/what)    | ✅ done        |
 | Push notifications (PWA + Web Push)         | ✅ done        |
 | PWA install (manifest + icons + SW)         | ✅ done        |
+| Reportes (KPIs + por empleado + comparativa mes-a-mes) | ✅ done |
 | QR code for invitations                     | ⏳ nice-to-have |
 | Multi-employer per group (UI)               | ⏳ schema OK, UI pending |
 | Archive employee                            | ⏳ schema OK, UI pending |
@@ -350,9 +351,11 @@ End-to-end loop closed (2026-05-06): invite → clock → verify → pay
 1. **More push triggers** — currently only `clockOutAction` notifies
    employers. Add: `verify_shift` → notify employee (?), reminder
    "olvidaste cerrar" via cron (needs pg_cron or external scheduler).
-2. **Reportes mínimos** — "cuánto le pagué a X este mes/año",
-   "horas totales del local", comparativa mes-a-mes.
-3. **Onboarding plantilla** "Mi primer local en 2 minutos".
+2. **Onboarding plantilla** "Mi primer local en 2 minutos".
+3. **Drill-down reports** — `/app/groups/[id]/reports` already covers
+   KPIs + per-employee + monthly chart for the chosen period. Possible
+   follow-ups: per-employee detail page, CSV export, position
+   breakdown.
 
 ### Monetization track (in parallel — gates "vendible")
 
