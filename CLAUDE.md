@@ -333,6 +333,40 @@ For push notifications:
   HTTPS for service worker registration.
 - iOS: push only works inside an installed PWA (Safari 16.4+).
 
+## Deploy to Vercel (recommended for the first prod URL)
+
+Required to test PWA install on real devices: Chrome / Android only
+shows the install prompt over HTTPS. Vercel free tier covers this.
+
+Steps for the first deploy:
+
+1. **Push the repo to GitHub** (already done).
+2. Sign in at https://vercel.com using your GitHub account.
+3. **Import the repo** (`bautimol/HourCounter`).
+4. Framework: Next.js (auto-detected). Root: `/`. Build command:
+   `npm run build`. Output: `.next` (default).
+5. **Set environment variables** (paste from your local `.env.local`):
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `VAPID_SUBJECT`
+   - `VAPID_PUBLIC_KEY`
+   - `VAPID_PRIVATE_KEY`
+   - `NEXT_PUBLIC_VAPID_PUBLIC_KEY`
+6. **Deploy**. You get `your-project.vercel.app`.
+7. **Update Supabase** → Auth → URL Configuration:
+   - Site URL: `https://your-project.vercel.app`
+   - Redirect URLs: add `https://your-project.vercel.app/auth/confirm`
+   (Keep the localhost ones too for dev.)
+8. Open the URL on an Android phone, sign up, look for the
+   "Instalá HourCounter" banner on `/app`. Tap install. Now it lives
+   on the home screen.
+
+For the real-domain step (`hourcounter.com.ar`), go to Vercel project
+→ Settings → Domains → Add. ~USD 25/year if you buy through nic.ar.
+Update Supabase URL Configuration again with the new domain.
+
+After every push to `main`, Vercel auto-deploys.
+
 ## Things to know about Next.js 16 in this repo
 
 - `middleware.ts` does not exist — use `proxy.ts` (root or `src/`).

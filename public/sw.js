@@ -16,6 +16,14 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(self.clients.claim());
 });
 
+// Chrome's installability heuristic requires the SW to register a fetch
+// handler — even if it just passes through to the network. Without this,
+// `beforeinstallprompt` never fires on Android Chrome and "Add to home
+// screen" silently misses the PWA experience.
+self.addEventListener("fetch", () => {
+  // No-op passthrough.
+});
+
 self.addEventListener("push", (event) => {
   if (!event.data) return;
 

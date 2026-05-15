@@ -12,6 +12,7 @@ import {
   OpenShiftBanner,
   type OpenShiftSummary,
 } from "./open-shift-banner";
+import { InstallBanner } from "./install-banner";
 
 type OpenShiftRow = {
   id: string;
@@ -93,6 +94,7 @@ export default async function AppHomePage() {
 
   return (
     <div className="space-y-8">
+      <InstallBanner />
       <OpenShiftBanner shifts={openShifts} />
 
       <PageHeader
