@@ -1,8 +1,9 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
+import { useFormStatus } from "react-dom";
 import Link from "next/link";
-import { Square } from "lucide-react";
+import { Loader2, Square } from "lucide-react";
 import {
   clockOutAction,
   type ClockState,
@@ -107,13 +108,7 @@ function SingleBanner({ shift }: { shift: OpenShiftSummary }) {
             name="client_click_iso"
             defaultValue=""
           />
-          <button
-            type="submit"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-danger px-3 py-1.5 text-sm font-medium text-white shadow-sm shadow-red-700/25 ring-1 ring-inset ring-white/15 transition-opacity hover:opacity-90"
-          >
-            <Square className="h-3.5 w-3.5 fill-current" aria-hidden />
-            Cerrar
-          </button>
+          <CloseShiftButton />
         </form>
       </div>
 
@@ -123,5 +118,29 @@ function SingleBanner({ shift }: { shift: OpenShiftSummary }) {
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * Submit button for the open-shift banner. Uses `useFormStatus` so the user
+ * gets visible feedback ("Cerrando…" + spinner, disabled state) while the
+ * server action runs — important on slow 3G where the round-trip can take
+ * a few seconds and a silent button looks broken.
+ */
+function CloseShiftButton() {
+  const { pending } = useFormStatus();
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="inline-flex items-center gap-1.5 rounded-lg bg-danger px-3 py-1.5 text-sm font-medium text-white shadow-sm shadow-red-700/25 ring-1 ring-inset ring-white/15 transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+    >
+      {pending ? (
+        <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+      ) : (
+        <Square className="h-3.5 w-3.5 fill-current" aria-hidden />
+      )}
+      {pending ? "Cerrando…" : "Terminar turno"}
+    </button>
   );
 }

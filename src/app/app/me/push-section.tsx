@@ -51,6 +51,12 @@ export function PushSection({ vapidPublicKey }: { vapidPublicKey: string | null 
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
+  // Hide the whole card when there is genuinely nothing to show: no VAPID
+  // configured (push won't work) AND no install prompt waiting. Showing a
+  // "falta VAPID" message to end users is technical noise that suggests the
+  // app is broken when it isn't.
+  const hasPushSupport = vapidPublicKey !== null;
+
   // Inspect current subscription state on mount.
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -189,6 +195,11 @@ export function PushSection({ vapidPublicKey }: { vapidPublicKey: string | null 
     }
   }
 
+  // Skip the card entirely when neither feature is actionable.
+  if (!hasPushSupport && install.kind !== "available") {
+    return null;
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -225,12 +236,9 @@ export function PushSection({ vapidPublicKey }: { vapidPublicKey: string | null 
             <p className="text-sm text-muted-foreground">{status.reason}</p>
           )}
 
-          {status.kind === "no-key" && (
-            <p className="text-sm text-muted-foreground">
-              Las notificaciones push no están configuradas en este servidor
-              (falta VAPID).
-            </p>
-          )}
+          {/* "no-key" is intentionally not rendered — surfacing "(falta VAPID)"
+              to end users reads like the app is broken. We hide the whole card
+              early when there is nothing else to show; here we silently no-op. */}
 
           {status.kind === "denied" && (
             <p className="text-sm text-amber-700 dark:text-amber-300">

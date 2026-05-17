@@ -223,6 +223,7 @@ function ClockInForm({
 
       <SubmitButton
         size="lg"
+        pendingText="Iniciando turno…"
         className="w-full rounded-xl shadow-lg shadow-emerald-600/20 ring-1 ring-inset ring-white/10"
       >
         <Play className="h-5 w-5" aria-hidden />
@@ -292,6 +293,7 @@ function ClockOutForm({
         <SubmitButton
           variant="danger"
           size="lg"
+          pendingText="Cerrando turno…"
           className="w-full rounded-xl shadow-lg shadow-red-600/25 ring-1 ring-inset ring-white/10"
         >
           <Square className="h-5 w-5 fill-current" aria-hidden />
