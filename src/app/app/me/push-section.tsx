@@ -292,3 +292,4 @@ export function PushSection({ vapidPublicKey }: { vapidPublicKey: string | null 
     </Card>
   );
 }
+
