@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getOrigin } from "@/lib/origin";
 
 export type SignupState = {
   error: string | null;
@@ -40,8 +41,7 @@ export async function signupAction(
 
   const supabase = await createClient();
 
-  const origin =
-    process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const origin = await getOrigin();
   // The confirm route forwards `next` as well, so the final landing is the
   // original destination after the email link is clicked.
   const confirmUrl = `${origin}/auth/confirm?next=${encodeURIComponent(next)}`;

@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { Clock, UserPlus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { getOrigin } from "@/lib/origin";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -59,7 +60,7 @@ export default async function InvitePage({
       .limit(20),
   ]);
 
-  const origin = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const origin = await getOrigin();
 
   return (
     <div className="space-y-8">
