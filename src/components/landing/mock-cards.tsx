@@ -90,12 +90,12 @@ export function MockMemberRow() {
   return (
     <div className={`${cardBase} flex items-center gap-3 p-3.5`}>
       <Avatar
-        initials="BM"
+        initials="CR"
         palette="bg-fuchsia-100 text-fuchsia-800 dark:bg-fuchsia-900 dark:text-fuchsia-200"
       />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <p className="truncate text-sm font-medium">Bautista Mol</p>
+          <p className="truncate text-sm font-medium">Camila R.</p>
           <OnlinePill />
         </div>
         <p className="text-xs text-muted-foreground">Cajero · ARS 1.500/h</p>

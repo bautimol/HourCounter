@@ -13,8 +13,7 @@ employer creates a *group*, defines *positions* (job roles like cashier,
 cook), invites people via link, employees clock in/out, and at payment
 time the system shows accumulated hours × rate + fixed amounts.
 
-User is **Juan** (student, exploring). The codebase is iterative — ship
-small slices, don't pre-build features.
+The codebase is iterative — ship small slices, don't pre-build features.
 
 ## Stack
 
@@ -342,7 +341,7 @@ Steps for the first deploy:
 
 1. **Push the repo to GitHub** (already done).
 2. Sign in at https://vercel.com using your GitHub account.
-3. **Import the repo** (`bautimol/HourCounter`).
+3. **Import the repo** (`<owner>/HourCounter`).
 4. Framework: Next.js (auto-detected). Root: `/`. Build command:
    `npm run build`. Output: `.next` (default).
 5. **Set environment variables** (paste from your local `.env.local`):
@@ -395,7 +394,7 @@ End-to-end loop closed (2026-05-06): invite → clock → verify → pay
 
 See "Path to monetization" section. Pricing decision, MercadoPago
 integration, /legal pages, custom domain + Sentry/Resend/PostHog.
-This track requires business decisions Juan needs to make
+This track requires business decisions the owner needs to make
 (precio/empleado, plan free, ToS) — engineering can't unilaterally
 move it forward.
 
@@ -524,8 +523,8 @@ but a few of their features map cleanly onto ours.)
 - **Live link vs snapshot for fixed amounts** (2026-05-05): scalar
   fields are live-link, fixed-amounts list is snapshot. Bulk
   propagation is opt-in and TBD.
-- **Employee can NOT edit shift times** (2026-05-07, raised by
-  Bautista's testing): the previous "employee can edit clock_out
+- **Employee can NOT edit shift times** (2026-05-07, raised during
+  early testing): the previous "employee can edit clock_out
   before verification" let the employee inflate hours by bumping
   clock_out forward. Now the employee can only edit `notes`. If the
   recorded clock_out is wrong (typically because they forgot to

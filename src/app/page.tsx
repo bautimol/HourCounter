@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowRight, ExternalLink } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { LandingNavbar } from "@/components/landing/landing-navbar";
 import { Marquee3D } from "@/components/landing/marquee-3d";
@@ -139,15 +139,6 @@ export default async function LandingPage() {
         <footer className="mx-auto max-w-6xl px-4 pb-10">
           <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-8 text-sm text-muted-foreground">
             <p>© {new Date().getFullYear()} HourCounter</p>
-            <a
-              href="https://github.com/bautimol/HourCounter"
-              target="_blank"
-              rel="noreferrer noopener"
-              className="inline-flex items-center gap-1.5 hover:text-foreground"
-            >
-              github.com/bautimol/HourCounter
-              <ExternalLink className="h-3.5 w-3.5" aria-hidden />
-            </a>
           </div>
         </footer>
       </main>

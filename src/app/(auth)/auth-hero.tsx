@@ -160,12 +160,12 @@ function DemoMemberRow() {
         aria-hidden
         className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-fuchsia-100 text-sm font-medium text-fuchsia-800 dark:bg-fuchsia-900 dark:text-fuchsia-200"
       >
-        BM
+        CR
       </span>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <p className="truncate text-sm font-medium text-foreground">
-            Bautista Mol
+            Camila R.
           </p>
           <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
             <span className="relative inline-flex h-1.5 w-1.5">
