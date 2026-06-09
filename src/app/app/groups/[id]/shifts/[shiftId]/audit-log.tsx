@@ -1,7 +1,7 @@
 import { History } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatTimeOfDay } from "@/lib/format";
+import { AR_TIME_ZONE, formatTimeOfDay } from "@/lib/format";
 
 export type AuditEntry = {
   id: string;
@@ -46,6 +46,7 @@ export function ShiftAuditLog({ entries }: { entries: AuditEntry[] }) {
                       month: "short",
                       hour: "2-digit",
                       minute: "2-digit",
+                      timeZone: AR_TIME_ZONE,
                     })}
                   </p>
                 </div>

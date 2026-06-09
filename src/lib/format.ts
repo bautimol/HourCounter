@@ -2,6 +2,14 @@
  * Display helpers for HourCounter domain values.
  */
 
+/**
+ * App-wide display timezone. The product is Argentina-only, and the server
+ * (Vercel) runs in UTC — without pinning this, every server-rendered date/time
+ * comes out +3h (a 09:00 shift shows as 12:00). Argentina has no DST (UTC-3
+ * year-round since 2009), so a fixed zone is safe.
+ */
+export const AR_TIME_ZONE = "America/Argentina/Buenos_Aires";
+
 export function paymentPeriodLabel(
   period: string | null | undefined,
   customDays?: number | null,
@@ -84,6 +92,7 @@ export function formatTimeOfDay(date: Date): string {
   return new Intl.DateTimeFormat("es-AR", {
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: AR_TIME_ZONE,
   }).format(date);
 }
 
@@ -95,15 +104,27 @@ export function formatShortDate(date: Date): string {
     weekday: "short",
     day: "numeric",
     month: "short",
+    timeZone: AR_TIME_ZONE,
   }).format(date);
 }
 
 /**
- * Returns ISO timestamp for the local start-of-day, useful for "hours
- * worked today" queries that need to be timezone-aware.
+ * Returns the UTC instant of "today at 00:00 in Argentina", for "hours worked
+ * today" queries. The old `new Date().setHours(0,0,0,0)` used the *server's*
+ * local midnight — on Vercel (UTC) that is 21:00 ART the day before, so "today"
+ * started 3h early. We resolve the current Y-M-D in AR and pin midnight to
+ * 03:00 UTC (= 00:00 ART, UTC-3 with no DST).
  */
 export function startOfTodayIso(): string {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d.toISOString();
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-CA", {
+      timeZone: AR_TIME_ZONE,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    })
+      .formatToParts(new Date())
+      .map((p) => [p.type, p.value]),
+  );
+  return `${parts.year}-${parts.month}-${parts.day}T03:00:00.000Z`;
 }

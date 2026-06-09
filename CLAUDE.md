@@ -215,7 +215,10 @@ HourCounter/
 │       ├── 0015_audit_log.sql              shift_edits table + record_shift_edit() helper; recreates update_my_time_entry / employer_update_shift / verify_shift / unverify_shift / verify_shifts_bulk to write audit rows
 │       ├── 0016_employee_notes_only.sql    drops clock_out param from update_my_time_entry — employee self-edit is notes-only now (employer is sole source of truth for shift times)
 │       ├── 0017_client_timestamps.sql      clock_in / clock_out accept an optional target_*_iso from the client. The server uses it only when within ±60s of its own now() (anti-cheat window) — eliminates the "timer starts at 0:00:40" perception of click→DB latency without trusting the client
-│       └── 0018_push_subscriptions.sql     push_subscriptions(user_id, endpoint, keys_p256dh, keys_auth, user_agent) + RLS (users manage their own); src/lib/push.ts deletes subs that the push service rejects (404/410)
+│       ├── 0018_push_subscriptions.sql     push_subscriptions(user_id, endpoint, keys_p256dh, keys_auth, user_agent) + RLS (users manage their own); src/lib/push.ts deletes subs that the push service rejects (404/410)
+│       ├── 0019_fix_update_member_full_ambiguous.sql  fixes an ambiguous column reference in update_member_full() (authored on the other track)
+│       ├── 0020_security_hardening.sql      RLS fixes (closes anon-key holes): drops group_members self-insert (employer takeover), drops time_entries employee direct insert/update (hour inflation + self-verify), restricts payments/payment_adjustments SELECT to employer-or-owner, drops invitations using(true) blanket read. Legit writes all go through SECURITY DEFINER RPCs so app is unaffected.
+│       └── 0021_timezone_day_count.sql      recreates calculate_pay_draft with date(clock_in at time zone 'America/Argentina/Buenos_Aires') so per_day_worked counts AR days, not UTC days
 ├── .env.local                      Supabase URL + anon key (gitignored)
 ├── .env.local.example              template
 ├── package.json

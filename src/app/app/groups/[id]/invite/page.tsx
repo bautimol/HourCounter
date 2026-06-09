@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/card";
 import { CopyButton } from "@/components/ui/copy-button";
 import { PageHeader } from "@/components/page-header";
+import { AR_TIME_ZONE } from "@/lib/format";
 import { CreateInvitationForm } from "./create-invitation-form";
 
 export default async function InvitePage({
@@ -148,6 +149,7 @@ export default async function InvitePage({
                         {inv.expires_at
                           ? new Date(inv.expires_at).toLocaleDateString(
                               "es-AR",
+                              { timeZone: AR_TIME_ZONE },
                             )
                           : "Sin vencimiento"}
                       </span>

@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
 import {
+  AR_TIME_ZONE,
   fixedAmountFrequencyLabel,
   formatCurrency,
 } from "@/lib/format";
@@ -174,9 +175,14 @@ export default async function NewPaymentPage({
           <div>
             <CardTitle>{memberName}</CardTitle>
             <p className="text-xs text-muted-foreground tabular-nums">
-              Período: {new Date(defaultFromIso).toLocaleString("es-AR")}
+              Período:{" "}
+              {new Date(defaultFromIso).toLocaleString("es-AR", {
+                timeZone: AR_TIME_ZONE,
+              })}
               {" → "}
-              {new Date(defaultToIso).toLocaleString("es-AR")}
+              {new Date(defaultToIso).toLocaleString("es-AR", {
+                timeZone: AR_TIME_ZONE,
+              })}
             </p>
           </div>
         </CardHeader>

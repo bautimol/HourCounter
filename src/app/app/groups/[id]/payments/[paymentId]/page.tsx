@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Avatar } from "@/components/ui/avatar";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
-import { formatCurrency, formatShortDate } from "@/lib/format";
+import { AR_TIME_ZONE, formatCurrency, formatShortDate } from "@/lib/format";
 import { PaymentActionsBar } from "./payment-actions-bar";
 
 type Adjustment = {
@@ -113,7 +113,7 @@ export default async function PaymentDetailPage({
             { label: memberName },
           ]}
           title="Liquidación"
-          subtitle={`Pagado ${paidAt.toLocaleString("es-AR")}`}
+          subtitle={`Pagado ${paidAt.toLocaleString("es-AR", { timeZone: AR_TIME_ZONE })}`}
           icon={<Coins className="h-5 w-5" aria-hidden />}
           accent="emerald"
           actions={
@@ -141,7 +141,7 @@ export default async function PaymentDetailPage({
           <div className="text-right text-xs text-muted-foreground">
             <p className="font-mono uppercase tracking-wider">HourCounter</p>
             <p className="mt-0.5 tabular-nums">
-              {paidAt.toLocaleDateString("es-AR")}
+              {paidAt.toLocaleDateString("es-AR", { timeZone: AR_TIME_ZONE })}
             </p>
           </div>
         </header>

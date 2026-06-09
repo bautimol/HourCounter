@@ -6,7 +6,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
 import { MotionList, MotionListItem } from "@/components/motion-list";
-import { formatCurrency, formatShortDate } from "@/lib/format";
+import { AR_TIME_ZONE, formatCurrency, formatShortDate } from "@/lib/format";
 
 type PaymentRow = {
   id: string;
@@ -129,7 +129,9 @@ export default async function PaymentsListPage({
                           {formatShortDate(new Date(p.period_start))}{" → "}
                           {formatShortDate(new Date(p.period_end))}
                           {" · pagado "}
-                          {new Date(p.paid_at).toLocaleDateString("es-AR")}
+                          {new Date(p.paid_at).toLocaleDateString("es-AR", {
+                            timeZone: AR_TIME_ZONE,
+                          })}
                         </p>
                       </div>
                       <span className="text-base font-semibold tabular-nums">
