@@ -39,6 +39,13 @@ export async function signupAction(
     };
   }
 
+  if (fullName.length > 120) {
+    return {
+      error: "El nombre es demasiado largo (máximo 120 caracteres)",
+      message: null,
+    };
+  }
+
   const supabase = await createClient();
 
   const origin = await getOrigin();
