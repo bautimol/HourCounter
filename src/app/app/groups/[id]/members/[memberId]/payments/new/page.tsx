@@ -27,6 +27,7 @@ type PayDraft = {
   days_with_shifts: number;
   hours_worked: number;
   hourly_amount: number;
+  mixed_rates?: boolean;
   fixed_amounts: {
     id: string;
     description: string;
@@ -220,11 +221,13 @@ export default async function NewPaymentPage({
                   <span>
                     Tarifa por hora{" "}
                     <span className="text-xs text-muted-foreground">
-                      (efectiva)
+                      {draft.mixed_rates ? "(varias según fecha)" : "(efectiva)"}
                     </span>
                   </span>
                   <span className="tabular-nums">
-                    {formatCurrency(draft.hourly_rate, draft.currency)}
+                    {draft.mixed_rates
+                      ? "—"
+                      : formatCurrency(draft.hourly_rate, draft.currency)}
                   </span>
                 </li>
                 <li className="flex items-baseline justify-between py-2.5">

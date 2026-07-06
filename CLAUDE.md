@@ -124,6 +124,19 @@ read policy (which lets every member see profile scalars).
     can clock in immediately. `clock_in` auto-creates the profile on
     first call. Effective rate stays NULL until configured; payment
     calc must handle this.
+13. **Rates can be effective-dated via per-shift snapshots** (0025). A
+    shift's value = `coalesce(time_entries.hourly_rate, live effective
+    rate)`. NULL snapshot floats to the current rate (default); a value
+    pins the shift. `change_employee_rate(profile, new_rate,
+    effective_from)` freezes every UNPAID, not-yet-frozen shift before
+    the cutoff at the old rate, then sets the new override — so past
+    stays old, cutoff-onward floats to new. Already-paid shifts are
+    never frozen (excluded by `clock_in > last payment period_end`);
+    the payment records are immutable regardless. Reports and
+    `calculate_pay_draft` both value hours per-shift, so they agree.
+    Caveat: a report over an *already-paid* period still recomputes at
+    the current live rate for those (unfrozen) shifts — pre-existing
+    behavior, acceptable since the payment record itself never moves.
 
 ## Repository layout
 
@@ -218,7 +231,11 @@ HourCounter/
 │       ├── 0018_push_subscriptions.sql     push_subscriptions(user_id, endpoint, keys_p256dh, keys_auth, user_agent) + RLS (users manage their own); src/lib/push.ts deletes subs that the push service rejects (404/410)
 │       ├── 0019_fix_update_member_full_ambiguous.sql  fixes an ambiguous column reference in update_member_full() (authored on the other track)
 │       ├── 0020_security_hardening.sql      RLS fixes (closes anon-key holes): drops group_members self-insert (employer takeover), drops time_entries employee direct insert/update (hour inflation + self-verify), restricts payments/payment_adjustments SELECT to employer-or-owner, drops invitations using(true) blanket read. Legit writes all go through SECURITY DEFINER RPCs so app is unaffected.
-│       └── 0021_timezone_day_count.sql      recreates calculate_pay_draft with date(clock_in at time zone 'America/Argentina/Buenos_Aires') so per_day_worked counts AR days, not UTC days
+│       ├── 0021_timezone_day_count.sql      recreates calculate_pay_draft with date(clock_in at time zone 'America/Argentina/Buenos_Aires') so per_day_worked counts AR days, not UTC days
+│       ├── 0022_payment_overlap_and_ondelete.sql  no-overlap constraint on payments + person FKs → SET NULL
+│       ├── 0023_rpc_hardening.sql           RPC hardening: REVOKE sensitive fns, gate effective_employee_profile by membership
+│       ├── 0024_revoke_record_shift_edit_public.sql  completes 0023 (revoke record_shift_edit from PUBLIC)
+│       └── 0025_retroactive_rates.sql       time_entries.hourly_rate snapshot (per-shift frozen rate) + change_employee_rate(profile,new_rate,effective_from) + calculate_pay_draft values hours per-shift with mixed_rates flag
 ├── .env.local                      Supabase URL + anon key (gitignored)
 ├── .env.local.example              template
 ├── package.json
@@ -260,6 +277,7 @@ HourCounter/
 | Push notifications (PWA + Web Push)         | ✅ done        |
 | PWA install (manifest + icons + SW)         | ✅ done        |
 | Reportes (horas trabajadas + su valor, filtro por empleado) | ✅ done |
+| Cambio de tarifa con fecha de vigencia (retroactivo opt-in) | ✅ done |
 | QR code for invitations                     | ⏳ nice-to-have |
 | Multi-employer per group (UI)               | ⏳ schema OK, UI pending |
 | Archive employee                            | ⏳ schema OK, UI pending |

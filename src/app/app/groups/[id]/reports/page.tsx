@@ -101,7 +101,7 @@ export default async function ReportsPage({
   // ---------------------------------------------------------------------------
   const selectedEmployee = employee && employee !== "" ? employee : null;
 
-  const shiftSelect = `employee_profile_id, clock_in, clock_out,
+  const shiftSelect = `employee_profile_id, clock_in, clock_out, hourly_rate,
      employee_profile:employee_profiles!inner(
        id, hourly_rate, currency,
        position:positions(hourly_rate, currency),
@@ -150,6 +150,7 @@ export default async function ReportsPage({
     employee_profile_id: string;
     clock_in: string;
     clock_out: string | null;
+    hourly_rate: number | null;
     employee_profile?: {
       id: string;
       hourly_rate: number | null;
@@ -192,7 +193,10 @@ export default async function ReportsPage({
     if (!gm) return null;
     const pos = Array.isArray(ep.position) ? ep.position[0] : ep.position;
 
-    const rate = ep.hourly_rate ?? pos?.hourly_rate ?? null;
+    // Per-shift frozen rate wins; otherwise fall back to the live effective
+    // rate (employee override, else the position's rate).
+    const liveRate = ep.hourly_rate ?? pos?.hourly_rate ?? null;
+    const rate = s.hourly_rate ?? liveRate;
     const currency = ep.currency ?? pos?.currency ?? "ARS";
     const ms =
       new Date(s.clock_out).getTime() - new Date(s.clock_in).getTime();

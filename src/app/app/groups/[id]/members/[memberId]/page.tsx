@@ -7,6 +7,7 @@ import {
   Receipt,
   ScrollText,
   Settings,
+  TrendingUp,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Avatar } from "@/components/ui/avatar";
@@ -265,6 +266,15 @@ export default async function MemberDetailPage({
                 overridden={effective.currency_overridden}
                 inheritedFrom={profile.position_name}
               />
+              <div className="border-t border-border pt-3">
+                <Link
+                  href={`/app/groups/${id}/members/${memberId}/rate`}
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-accent-soft-foreground hover:underline"
+                >
+                  <TrendingUp className="h-3.5 w-3.5" aria-hidden />
+                  Cambiar tarifa con fecha de vigencia
+                </Link>
+              </div>
             </CardBody>
           </Card>
 
