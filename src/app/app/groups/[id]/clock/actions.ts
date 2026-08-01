@@ -6,6 +6,16 @@ import { sendPushToUsers } from "@/lib/push";
 
 export type ClockState = {
   error: string | null;
+  /**
+   * Set only after a successful clock-out, so the UI can confirm what was
+   * actually recorded. Without this the employee taps "Terminar turno", the
+   * card flips back to "Iniciar turno" and nothing tells her it worked.
+   */
+  closed?: {
+    minutes: number;
+    clockInIso: string;
+    clockOutIso: string;
+  } | null;
 };
 
 export async function clockInAction(
@@ -81,7 +91,7 @@ export async function clockOutAction(
     clientClickIso !== "" && !Number.isNaN(new Date(clientClickIso).getTime());
 
   const supabase = await createClient();
-  const { error } = await supabase.rpc("clock_out", {
+  const { data: closedId, error } = await supabase.rpc("clock_out", {
     target_group_id: groupId,
     notes_text: notes || null,
     target_clock_out_iso: validClick ? clientClickIso : null,
@@ -89,6 +99,30 @@ export async function clockOutAction(
 
   if (error) {
     return { error: error.message };
+  }
+
+  // Read back what was actually stored so the confirmation shows the recorded
+  // times, not what the client believed it sent.
+  let closed: ClockState["closed"] = null;
+  if (typeof closedId === "string") {
+    const { data: entry } = await supabase
+      .from("time_entries")
+      .select("clock_in, clock_out")
+      .eq("id", closedId)
+      .maybeSingle();
+
+    if (entry?.clock_in && entry.clock_out) {
+      const minutes = Math.round(
+        (new Date(entry.clock_out).getTime() -
+          new Date(entry.clock_in).getTime()) /
+          60000,
+      );
+      closed = {
+        minutes,
+        clockInIso: entry.clock_in,
+        clockOutIso: entry.clock_out,
+      };
+    }
   }
 
   revalidatePath(`/app/groups/${groupId}`);
@@ -137,5 +171,5 @@ export async function clockOutAction(
     // Swallow — push is fire-and-forget.
   }
 
-  return { error: null };
+  return { error: null, closed };
 }

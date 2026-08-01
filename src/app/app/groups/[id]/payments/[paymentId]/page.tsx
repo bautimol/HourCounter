@@ -259,6 +259,10 @@ export default async function PaymentDetailPage({
           @media print {
             body { background: white !important; }
             header, nav, .print\\:hidden { display: none !important; }
+            /* The receipt has its own <header> (employee, group, amount); the
+               rule above was blanking it, so the printed liquidación came out
+               without a name on it. */
+            #liquidacion header { display: flex !important; }
             #liquidacion {
               max-width: 100% !important;
               margin: 0 !important;

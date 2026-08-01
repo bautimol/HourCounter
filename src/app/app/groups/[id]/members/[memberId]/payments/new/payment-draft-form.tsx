@@ -42,6 +42,7 @@ export function PaymentDraftForm({
   periodEndIso,
   currency,
   subtotalBeforeAdjustments,
+  blockedReason = null,
 }: {
   groupId: string;
   profileId: string;
@@ -49,6 +50,8 @@ export function PaymentDraftForm({
   periodEndIso: string;
   currency: string;
   subtotalBeforeAdjustments: number;
+  /** When set, confirming is disabled and this explains why. */
+  blockedReason?: string | null;
 }) {
   const action = createPaymentAction.bind(
     null,
@@ -193,11 +196,31 @@ export function PaymentDraftForm({
 
       {state.error && <ErrorMessage>{state.error}</ErrorMessage>}
 
-      <div className="flex justify-end">
-        <SubmitButton size="lg" fullWidth={false} className="rounded-xl">
-          <Coins className="h-5 w-5" aria-hidden />
-          Confirmar pago
-        </SubmitButton>
+      <div className="flex flex-col items-end gap-2">
+        {blockedReason && (
+          <p className="text-right text-xs text-amber-700 dark:text-amber-300">
+            {blockedReason}
+          </p>
+        )}
+        {blockedReason ? (
+          // Hard stop, not a warning: confirming here would strand those hours
+          // in a closed period with no way to pay them later.
+          <Button
+            type="button"
+            size="lg"
+            disabled
+            className="rounded-xl"
+            aria-disabled="true"
+          >
+            <Coins className="h-5 w-5" aria-hidden />
+            Confirmar pago
+          </Button>
+        ) : (
+          <SubmitButton size="lg" fullWidth={false} className="rounded-xl">
+            <Coins className="h-5 w-5" aria-hidden />
+            Confirmar pago
+          </SubmitButton>
+        )}
       </div>
     </form>
   );

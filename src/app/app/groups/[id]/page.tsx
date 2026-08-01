@@ -333,6 +333,29 @@ export default async function GroupDetailPage({
         )}
       </section>
 
+      {/* The employee's clock comes first: it is the only thing she opens the
+          app to do, and the members list below is long enough to push it off
+          the first screen on a phone. */}
+      {isEmployee && (
+        <>
+          <ClockCard
+            groupId={id}
+            openShift={openShift}
+            defaultExpectedHours={null}
+            defaultExpectedExtraMinutes={null}
+            closedTodayMinutes={closedTodayMinutes}
+            geofenceEnabled={!!group.geofence_enabled}
+          />
+
+          <section className="space-y-3">
+            <h2 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Mis turnos recientes
+            </h2>
+            <RecentShiftsList groupId={id} shifts={recentShifts} />
+          </section>
+        </>
+      )}
+
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
@@ -428,26 +451,6 @@ export default async function GroupDetailPage({
           })}
         </MotionList>
       </section>
-
-      {isEmployee && (
-        <>
-          <ClockCard
-            groupId={id}
-            openShift={openShift}
-            defaultExpectedHours={null}
-            defaultExpectedExtraMinutes={null}
-            closedTodayMinutes={closedTodayMinutes}
-            geofenceEnabled={!!group.geofence_enabled}
-          />
-
-          <section className="space-y-3">
-            <h2 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Mis turnos recientes
-            </h2>
-            <RecentShiftsList groupId={id} shifts={recentShifts} />
-          </section>
-        </>
-      )}
 
       {!isEmployer && (
         <ComingSoonGrid

@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
-import { MapPin, Play, Square, Timer } from "lucide-react";
+import { CheckCircle2, MapPin, Play, Square, Timer } from "lucide-react";
 import {
   clockInAction,
   clockOutAction,
@@ -47,6 +47,12 @@ export function ClockCard({
   /** When true, the clock-in form requests browser geolocation. */
   geofenceEnabled: boolean;
 }) {
+  // The clock-out action state lives HERE, not in ClockOutForm: once the shift
+  // closes, `openShift` goes null and that form unmounts, which would throw
+  // away the confirmation right when the employee needs to see it.
+  const clockOut = clockOutAction.bind(null, groupId);
+  const [outState, outFormAction] = useActionState(clockOut, initialState);
+
   return (
     <Card>
       <CardHeader>
@@ -56,8 +62,16 @@ export function ClockCard({
         </CardTitle>
       </CardHeader>
       <CardBody className="pt-0">
+        {!openShift && outState.closed && (
+          <ClockOutReceipt closed={outState.closed} />
+        )}
+
         {openShift ? (
-          <ClockOutForm groupId={groupId} openShift={openShift} />
+          <ClockOutForm
+            openShift={openShift}
+            state={outState}
+            formAction={outFormAction}
+          />
         ) : (
           <ClockInForm
             groupId={groupId}
@@ -235,15 +249,42 @@ function ClockInForm({
   );
 }
 
-function ClockOutForm({
-  groupId,
-  openShift,
+/**
+ * Confirmation shown after a shift closes, with the times the DB actually
+ * recorded. Stays on screen until the next navigation.
+ */
+function ClockOutReceipt({
+  closed,
 }: {
-  groupId: string;
-  openShift: OpenShift;
+  closed: NonNullable<ClockState["closed"]>;
 }) {
-  const action = clockOutAction.bind(null, groupId);
-  const [state, formAction] = useActionState(action, initialState);
+  return (
+    <div className="mb-5 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4">
+      <p className="flex items-center gap-2 text-sm font-medium text-emerald-700 dark:text-emerald-300">
+        <CheckCircle2 className="h-4 w-4" aria-hidden />
+        Listo, registramos tu turno
+      </p>
+      <p className="mt-1.5 text-sm text-foreground tabular-nums">
+        {formatDuration(closed.minutes * 60_000)} ·{" "}
+        {formatTimeOfDay(new Date(closed.clockInIso))} a{" "}
+        {formatTimeOfDay(new Date(closed.clockOutIso))}
+      </p>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Tu empleador lo va a revisar.
+      </p>
+    </div>
+  );
+}
+
+function ClockOutForm({
+  openShift,
+  state,
+  formAction,
+}: {
+  openShift: OpenShift;
+  state: ClockState;
+  formAction: (formData: FormData) => void;
+}) {
   const clickTsRef = useRef<HTMLInputElement>(null);
 
   const startTs = new Date(openShift.clockInIso).getTime();

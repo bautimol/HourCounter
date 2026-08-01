@@ -24,7 +24,10 @@ type EntryRow = {
   notes: string | null;
 };
 
-/** One printed line: a day, a concept and a rate (they never mix within a row). */
+/**
+ * One printed line: a day, a concept, a rate and an approval state — none of
+ * them mix within a row, so every line can be attributed to exactly one total.
+ */
 type DayRow = {
   key: string;
   dayIso: string;
@@ -33,7 +36,7 @@ type DayRow = {
   rate: number;
   minutes: number;
   descriptions: string[];
-  hasUnverified: boolean;
+  verified: boolean;
 };
 
 export default async function MemberReportPage({
@@ -143,13 +146,13 @@ export default async function MemberReportPage({
 
     const rate = e.hourly_rate == null ? liveRate : Number(e.hourly_rate);
     const dayIso = arCalendarDay(start);
-    const key = `${dayIso}|${e.concept}|${rate}`;
+    const verified = e.verified_at != null;
+    const key = `${dayIso}|${e.concept}|${rate}|${verified ? "v" : "p"}`;
 
     const existing = byKey.get(key);
     if (existing) {
       existing.minutes += minutes;
       if (e.notes) existing.descriptions.push(e.notes);
-      if (e.verified_at == null) existing.hasUnverified = true;
     } else {
       byKey.set(key, {
         key,
@@ -159,7 +162,7 @@ export default async function MemberReportPage({
         rate,
         minutes,
         descriptions: e.notes ? [e.notes] : [],
-        hasUnverified: e.verified_at == null,
+        verified,
       });
     }
   }
@@ -170,12 +173,19 @@ export default async function MemberReportPage({
       : a.dayIso.localeCompare(b.dayIso),
   );
 
-  const totalHours = rows.reduce((acc, r) => acc + r.minutes / 60, 0);
-  const totalAmount = rows.reduce(
-    (acc, r) => acc + (r.minutes / 60) * r.rate,
-    0,
-  );
-  const anyUnverified = rows.some((r) => r.hasUnverified);
+  // Approved and pending are totalled separately: only approved days are what
+  // the liquidation will actually pay, and this sheet gets signed.
+  const sum = (list: DayRow[]) => ({
+    hours: list.reduce((acc, r) => acc + r.minutes / 60, 0),
+    amount: list.reduce((acc, r) => acc + (r.minutes / 60) * r.rate, 0),
+    days: new Set(list.map((r) => r.dayIso)).size,
+  });
+
+  const approved = sum(rows.filter((r) => r.verified));
+  const pending = sum(rows.filter((r) => !r.verified));
+  const totalHours = approved.hours + pending.hours;
+  const totalAmount = approved.amount + pending.amount;
+  const anyUnverified = pending.hours > 0;
 
   const memberName = member.display_name ?? "Empleado";
   const rangeLabel = `${formatDayMonthYear(new Date(fromIso))} al ${formatDayMonthYear(new Date(toIso))}`;
@@ -190,10 +200,16 @@ export default async function MemberReportPage({
       (r) =>
         `${formatDayMonthYear(r.date)} · ${conceptShortLabel(r.concept)} · ` +
         `${formatHours(r.minutes / 60)} h · ${formatCurrency(r.rate, currency)}/h · ` +
-        `${formatCurrency((r.minutes / 60) * r.rate, currency)}`,
+        `${formatCurrency((r.minutes / 60) * r.rate, currency)}` +
+        (r.verified ? "" : " · SIN APROBAR"),
     ),
     "",
-    `TOTAL: ${formatHours(totalHours)} h · ${formatCurrency(totalAmount, currency)}`,
+    `TOTAL APROBADO: ${formatHours(approved.hours)} h · ${formatCurrency(approved.amount, currency)}`,
+    ...(anyUnverified
+      ? [
+          `Pendiente de aprobar: ${formatHours(pending.hours)} h · ${formatCurrency(pending.amount, currency)}`,
+        ]
+      : []),
   ].join("\n");
 
   const isThisMonth = from === defaultFrom && to === defaultTo;
@@ -284,9 +300,9 @@ export default async function MemberReportPage({
                     </td>
                     <td className="py-2 pr-3">
                       {conceptShortLabel(r.concept)}
-                      {r.hasUnverified && (
+                      {!r.verified && (
                         <span className="ml-1.5 text-xs text-amber-700 dark:text-amber-300">
-                          (sin verificar)
+                          (sin aprobar)
                         </span>
                       )}
                       {r.descriptions.length > 0 && (
@@ -310,17 +326,46 @@ export default async function MemberReportPage({
               <tfoot>
                 <tr className="border-t-2 border-border font-semibold">
                   <td className="py-3 pr-3" colSpan={2}>
-                    Total ({rows.length}{" "}
-                    {rows.length === 1 ? "día" : "días"})
+                    Total aprobado ({approved.days}{" "}
+                    {approved.days === 1 ? "día" : "días"})
                   </td>
                   <td className="py-3 pr-3 text-right tabular-nums">
-                    {formatHours(totalHours)}
+                    {formatHours(approved.hours)}
                   </td>
                   <td className="py-3 pr-3" />
                   <td className="py-3 text-right tabular-nums">
-                    {formatCurrency(totalAmount, currency)}
+                    {formatCurrency(approved.amount, currency)}
                   </td>
                 </tr>
+                {anyUnverified && (
+                  <>
+                    <tr className="text-amber-700 dark:text-amber-300">
+                      <td className="py-2 pr-3" colSpan={2}>
+                        Pendiente de aprobar ({pending.days}{" "}
+                        {pending.days === 1 ? "día" : "días"})
+                      </td>
+                      <td className="py-2 pr-3 text-right tabular-nums">
+                        {formatHours(pending.hours)}
+                      </td>
+                      <td className="py-2 pr-3" />
+                      <td className="py-2 text-right tabular-nums">
+                        {formatCurrency(pending.amount, currency)}
+                      </td>
+                    </tr>
+                    <tr className="border-t border-border font-semibold">
+                      <td className="py-2 pr-3" colSpan={2}>
+                        Total del período
+                      </td>
+                      <td className="py-2 pr-3 text-right tabular-nums">
+                        {formatHours(totalHours)}
+                      </td>
+                      <td className="py-2 pr-3" />
+                      <td className="py-2 text-right tabular-nums">
+                        {formatCurrency(totalAmount, currency)}
+                      </td>
+                    </tr>
+                  </>
+                )}
               </tfoot>
             </table>
           </div>
@@ -328,8 +373,9 @@ export default async function MemberReportPage({
 
         {anyUnverified && (
           <p className="mt-4 text-xs text-muted-foreground">
-            Los días marcados como &quot;sin verificar&quot; todavía no fueron
-            aprobados y no entran en la liquidación hasta que los apruebes.
+            Los días &quot;sin aprobar&quot; todavía no fueron revisados por el
+            empleador: están sumados aparte y no entran en el pago hasta que se
+            aprueben.
           </p>
         )}
 
@@ -341,12 +387,22 @@ export default async function MemberReportPage({
             Firma del empleador
           </div>
         </section>
+
+        <p className="mt-8 text-center text-[11px] text-muted-foreground">
+          Emitido el {formatDayMonthYear(new Date())} · HourCounter
+        </p>
       </article>
 
       <style>{`
         @media print {
           body { background: white !important; }
           header, nav, .print\\:hidden { display: none !important; }
+          /* The rule above hides the app chrome, but this sheet has its OWN
+             <header> (name, group, period) — without re-showing it the printed
+             page comes out anonymous. Scoped to #reporte so the layout of
+             everything else (grids, flex) is untouched; higher specificity
+             than the bare "header" selector, so it wins. */
+          #reporte header { display: block !important; }
           #reporte { max-width: 100% !important; margin: 0 !important; padding: 24px !important; }
           @page { margin: 16mm; }
         }

@@ -1,5 +1,6 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { Coins } from "lucide-react";
+import { AlertTriangle, Coins } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Avatar } from "@/components/ui/avatar";
 import {
@@ -13,6 +14,7 @@ import {
   AR_TIME_ZONE,
   fixedAmountFrequencyLabel,
   formatCurrency,
+  formatHours,
 } from "@/lib/format";
 import { PaymentDraftForm } from "./payment-draft-form";
 
@@ -148,6 +150,30 @@ export default async function NewPaymentPage({
   const draft = draftData as unknown as PayDraft | null;
   const memberName = member.display_name ?? "Empleado";
 
+  // Shifts inside this period that were never approved. The draft ignores them
+  // (it only counts verified ones), and once this payment exists the
+  // payments_no_overlap constraint blocks re-liquidating the same range — so
+  // approving them afterwards would strand those hours, unpaid and unnoticed.
+  const { data: pendingRows } = await supabase
+    .from("time_entries")
+    .select("id, clock_in, clock_out")
+    .eq("employee_profile_id", profile.id)
+    .is("verified_at", null)
+    .not("clock_out", "is", null)
+    .gte("clock_in", defaultFromIso)
+    .lt("clock_in", defaultToIso);
+
+  const pendingShifts = pendingRows ?? [];
+  const pendingMinutes = pendingShifts.reduce((acc, s) => {
+    if (!s.clock_out) return acc;
+    return (
+      acc +
+      (new Date(s.clock_out).getTime() - new Date(s.clock_in).getTime()) / 60000
+    );
+  }, 0);
+  const pendingHours = pendingMinutes / 60;
+  const pendingAmount = pendingHours * (draft?.hourly_rate ?? 0);
+
   return (
     <div className="mx-auto max-w-2xl space-y-8">
       <PageHeader
@@ -273,11 +299,44 @@ export default async function NewPaymentPage({
             </CardBody>
           </Card>
 
+          {pendingShifts.length > 0 && (
+            <div className="rounded-xl border border-amber-500/40 bg-amber-500/5 p-4">
+              <p className="flex items-center gap-2 text-sm font-medium text-amber-700 dark:text-amber-300">
+                <AlertTriangle className="h-4 w-4" aria-hidden />
+                Hay {pendingShifts.length}{" "}
+                {pendingShifts.length === 1
+                  ? "turno sin aprobar"
+                  : "turnos sin aprobar"}{" "}
+                en este período
+              </p>
+              <p className="mt-1.5 text-sm text-foreground">
+                Son {formatHours(pendingHours)} h (~
+                {formatCurrency(pendingAmount, draft.currency)}) que{" "}
+                <strong className="font-medium">no</strong> entran en este pago.
+                Si liquidás ahora, después no vas a poder pagarlos por separado:
+                el período va a quedar cerrado.
+              </p>
+              <Link
+                href={`/app/groups/${id}/shifts`}
+                className="mt-3 inline-flex items-center gap-1.5 rounded-md bg-accent px-3 py-2 text-sm font-medium text-accent-foreground shadow-sm transition-opacity hover:opacity-90"
+              >
+                Revisar y aprobar turnos
+              </Link>
+            </div>
+          )}
+
           <PaymentDraftForm
             groupId={id}
             profileId={profile.id}
             periodStartIso={defaultFromIso}
             periodEndIso={defaultToIso}
+            blockedReason={
+              pendingShifts.length > 0
+                ? pendingShifts.length === 1
+                  ? "Aprobá o corregí el turno pendiente antes de liquidar."
+                  : `Aprobá o corregí los ${pendingShifts.length} turnos pendientes antes de liquidar.`
+                : null
+            }
             currency={draft.currency}
             subtotalBeforeAdjustments={draft.subtotal}
           />
