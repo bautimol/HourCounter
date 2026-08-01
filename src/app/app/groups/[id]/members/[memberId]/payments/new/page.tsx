@@ -12,6 +12,7 @@ import {
 import { PageHeader } from "@/components/page-header";
 import {
   AR_TIME_ZONE,
+  conceptShortLabel,
   fixedAmountFrequencyLabel,
   formatCurrency,
   formatHours,
@@ -29,7 +30,15 @@ type PayDraft = {
   days_with_shifts: number;
   hours_worked: number;
   hourly_amount: number;
+  /** True when the period spans an effective-dated rate change. */
   mixed_rates?: boolean;
+  /** Hours split by what the day IS (worked / feriado / vacaciones / otro). */
+  by_concept?: {
+    concept: string;
+    entries: number;
+    hours: number;
+    amount: number;
+  }[];
   fixed_amounts: {
     id: string;
     description: string;
@@ -174,6 +183,11 @@ export default async function NewPaymentPage({
   const pendingHours = pendingMinutes / 60;
   const pendingAmount = pendingHours * (draft?.hourly_rate ?? 0);
 
+  // Only worth splitting when the period actually mixes concepts: with a lone
+  // "worked" bucket the sub-lines would just repeat the total.
+  const byConcept = draft?.by_concept ?? [];
+  const showConceptBreakdown = byConcept.length > 1;
+
   return (
     <div className="mx-auto max-w-2xl space-y-8">
       <PageHeader
@@ -231,30 +245,61 @@ export default async function NewPaymentPage({
             </CardHeader>
             <CardBody className="pt-0">
               <ul className="divide-y divide-border text-sm">
-                <li className="flex items-baseline justify-between py-2.5 first:pt-0">
-                  <span>
-                    Horas trabajadas{" "}
-                    <span className="text-xs text-muted-foreground tabular-nums">
-                      ({draft.shift_count} turnos · {draft.days_with_shifts}{" "}
-                      días)
+                <li className="py-2.5 first:pt-0">
+                  <div className="flex items-baseline justify-between">
+                    <span>
+                      {/* With feriados or vacaciones inside, the total is no
+                          longer "horas trabajadas" — and days_with_shifts only
+                          counts genuinely worked days. */}
+                      {showConceptBreakdown ? "Horas pagadas" : "Horas trabajadas"}{" "}
+                      <span className="text-xs text-muted-foreground tabular-nums">
+                        ({draft.shift_count} turnos · {draft.days_with_shifts}{" "}
+                        {showConceptBreakdown ? "días trabajados" : "días"})
+                      </span>
                     </span>
-                  </span>
-                  <span className="tabular-nums font-medium">
-                    {draft.hours_worked.toLocaleString("es-AR")} h
-                  </span>
+                    <span className="tabular-nums font-medium">
+                      {draft.hours_worked.toLocaleString("es-AR")} h
+                    </span>
+                  </div>
+                  {showConceptBreakdown && (
+                    <ul className="mt-2 space-y-1 border-l border-border pl-3">
+                      {byConcept.map((c) => (
+                        <li
+                          key={c.concept}
+                          className="flex items-baseline justify-between text-xs text-muted-foreground"
+                        >
+                          <span>{conceptShortLabel(c.concept)}</span>
+                          <span className="tabular-nums">
+                            {formatHours(c.hours)} h
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </li>
-                <li className="flex items-baseline justify-between py-2.5">
-                  <span>
-                    Tarifa por hora{" "}
-                    <span className="text-xs text-muted-foreground">
-                      {draft.mixed_rates ? "(varias según fecha)" : "(efectiva)"}
+                <li className="py-2.5">
+                  <div className="flex items-baseline justify-between">
+                    <span>
+                      Tarifa por hora{" "}
+                      <span className="text-xs text-muted-foreground">
+                        {draft.mixed_rates
+                          ? "(varias según fecha)"
+                          : "(efectiva)"}
+                      </span>
                     </span>
-                  </span>
-                  <span className="tabular-nums">
-                    {draft.mixed_rates
-                      ? "—"
-                      : formatCurrency(draft.hourly_rate, draft.currency)}
-                  </span>
+                    <span className="tabular-nums">
+                      {draft.mixed_rates
+                        ? "—"
+                        : formatCurrency(draft.hourly_rate, draft.currency)}
+                    </span>
+                  </div>
+                  {draft.mixed_rates && (
+                    <p className="mt-1.5 text-xs text-muted-foreground">
+                      En este período hubo más de una tarifa, por un cambio con
+                      fecha de vigencia. Cada turno se valuó con la tarifa que
+                      tenía ese día.
+                    </p>
+                  )}
                 </li>
                 <li className="flex items-baseline justify-between py-2.5">
                   <span>Subtotal por horas</span>

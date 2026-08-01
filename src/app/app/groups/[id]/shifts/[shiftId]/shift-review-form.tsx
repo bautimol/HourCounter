@@ -17,6 +17,31 @@ import { Select } from "@/components/ui/select";
 
 const initialState: ShiftActionState = { error: null };
 
+/**
+ * `employer_update_shift` takes a single `notes` column, and the employer used
+ * to overwrite it — erasing the employee's explanation ("me fui 17:30") exactly
+ * when a dispute was being settled. Cheapest fix that loses nothing: keep her
+ * text verbatim at the top and append the employer's under this marker, which
+ * is also what lets us split them apart again on reload.
+ */
+const EMPLOYER_NOTE_MARKER = "— Nota del empleador:";
+
+function splitNotes(raw: string): { employee: string; employer: string } {
+  const at = raw.indexOf(EMPLOYER_NOTE_MARKER);
+  if (at === -1) return { employee: raw.trim(), employer: "" };
+  return {
+    employee: raw.slice(0, at).trim(),
+    employer: raw.slice(at + EMPLOYER_NOTE_MARKER.length).trim(),
+  };
+}
+
+function composeNotes(employee: string, employer: string): string {
+  const mine = employer.trim();
+  if (mine === "") return employee;
+  if (employee === "") return `${EMPLOYER_NOTE_MARKER}\n${mine}`;
+  return `${employee}\n\n${EMPLOYER_NOTE_MARKER}\n${mine}`;
+}
+
 function toLocalDatetimeValue(date: Date): string {
   const pad = (n: number) => n.toString().padStart(2, "0");
   return (
@@ -48,6 +73,12 @@ export function ShiftReviewForm({
   const [localStr, setLocalStr] = useState(() =>
     toLocalDatetimeValue(new Date(initialClockOutIso)),
   );
+
+  const employeeNote = splitNotes(initialNotes).employee;
+  const [employerNote, setEmployerNote] = useState(
+    () => splitNotes(initialNotes).employer,
+  );
+
   const iso = (() => {
     const d = new Date(localStr);
     return Number.isNaN(d.getTime()) ? "" : d.toISOString();
@@ -55,6 +86,17 @@ export function ShiftReviewForm({
 
   return (
     <form action={formAction} className="space-y-4">
+      {employeeNote !== "" && (
+        <div className="rounded-lg border border-border bg-surface-muted/40 p-3">
+          <p className="text-xs font-medium text-muted-foreground">
+            Nota del empleado
+          </p>
+          <p className="mt-1 whitespace-pre-wrap text-sm italic text-foreground">
+            {employeeNote}
+          </p>
+        </div>
+      )}
+
       <Field>
         <Label htmlFor="clock_out_local">Hora de salida</Label>
         <input
@@ -87,14 +129,22 @@ export function ShiftReviewForm({
         </Field>
 
         <Field>
-          <Label htmlFor="notes">Notas</Label>
+          <Label htmlFor="employer_note">Tu nota</Label>
           <textarea
-            id="notes"
-            name="notes"
+            id="employer_note"
             rows={1}
-            defaultValue={initialNotes}
+            value={employerNote}
+            onChange={(e) => setEmployerNote(e.target.value)}
             maxLength={500}
             className="min-h-[2.5rem] w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_rgb(var(--ring-color)_/_0.18)]"
+          />
+          {employeeNote !== "" && (
+            <Hint>Se suma a la nota del empleado, no la reemplaza.</Hint>
+          )}
+          <input
+            type="hidden"
+            name="notes"
+            value={composeNotes(employeeNote, employerNote)}
           />
         </Field>
       </div>

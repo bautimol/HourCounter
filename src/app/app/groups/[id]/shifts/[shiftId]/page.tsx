@@ -191,12 +191,12 @@ export default async function ShiftReviewPage({
             {verified ? (
               <Badge variant="accent">
                 <ShieldCheck className="mr-1 h-3 w-3" aria-hidden />
-                Verificado
+                Aprobado
               </Badge>
             ) : shift.status === "needs_review" ? (
               <Badge variant="muted">Para revisar</Badge>
             ) : (
-              <Badge variant="muted">Pendiente</Badge>
+              <Badge variant="muted">Sin aprobar</Badge>
             )}
             <Link
               href={`/app/groups/${id}/members/${member.id}`}
@@ -206,20 +206,15 @@ export default async function ShiftReviewPage({
             </Link>
           </div>
         </CardHeader>
-        {(shift.notes || shift.within_geofence !== null) && (
+        {/* Notes moved into the review form below, where the employee's note is
+            shown labelled and read-only instead of raw. */}
+        {shift.within_geofence !== null && (
           <CardBody className="space-y-3 pt-0">
-            {shift.within_geofence !== null && (
-              <GeofenceBanner
-                within={shift.within_geofence}
-                lat={shift.clock_in_lat}
-                lng={shift.clock_in_lng}
-              />
-            )}
-            {shift.notes && (
-              <p className="rounded-md border border-border bg-surface-muted/40 p-3 text-sm italic text-muted-foreground">
-                {shift.notes}
-              </p>
-            )}
+            <GeofenceBanner
+              within={shift.within_geofence}
+              lat={shift.clock_in_lat}
+              lng={shift.clock_in_lng}
+            />
           </CardBody>
         )}
       </Card>

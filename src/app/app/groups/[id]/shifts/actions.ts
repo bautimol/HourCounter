@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { friendlyError } from "@/lib/errors";
 
 export type ShiftActionState = {
   error: string | null;
@@ -21,7 +22,14 @@ export async function verifyShiftAction(
   const { error } = await supabase.rpc("verify_shift", {
     target_shift_id: shiftId,
   });
-  if (error) return { error: error.message };
+  if (error) {
+    return {
+      error: friendlyError(
+        error.message,
+        "No pudimos aprobar el turno. Probá de nuevo.",
+      ),
+    };
+  }
 
   revalidatePath(`/app/groups/${groupId}/shifts`);
   revalidatePath(`/app/groups/${groupId}`);
@@ -38,7 +46,14 @@ export async function unverifyShiftAction(
   const { error } = await supabase.rpc("unverify_shift", {
     target_shift_id: shiftId,
   });
-  if (error) return { error: error.message };
+  if (error) {
+    return {
+      error: friendlyError(
+        error.message,
+        "No pudimos desaprobar el turno. Probá de nuevo.",
+      ),
+    };
+  }
 
   revalidatePath(`/app/groups/${groupId}/shifts`);
   revalidatePath(`/app/groups/${groupId}`);
@@ -59,7 +74,14 @@ export async function bulkVerifyShiftsAction(
   const { error } = await supabase.rpc("verify_shifts_bulk", {
     shift_ids: ids,
   });
-  if (error) return { error: error.message };
+  if (error) {
+    return {
+      error: friendlyError(
+        error.message,
+        "No pudimos aprobar los turnos seleccionados. Probá de nuevo.",
+      ),
+    };
+  }
 
   revalidatePath(`/app/groups/${groupId}/shifts`);
   revalidatePath(`/app/groups/${groupId}`);
@@ -106,7 +128,14 @@ export async function employerUpdateShiftAction(
     also_verify: alsoVerify,
   });
 
-  if (error) return { error: error.message };
+  if (error) {
+    return {
+      error: friendlyError(
+        error.message,
+        "No pudimos guardar el turno. Probá de nuevo.",
+      ),
+    };
+  }
 
   revalidatePath(`/app/groups/${groupId}/shifts`);
   revalidatePath(`/app/groups/${groupId}/shifts/${shiftId}`);

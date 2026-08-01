@@ -3,7 +3,7 @@ import { MessageSquare, ShieldCheck } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { MotionList, MotionListItem } from "@/components/motion-list";
 import {
-  conceptShortLabel,
+  conceptLabel,
   formatDuration,
   formatShortDate,
   formatTimeOfDay,
@@ -47,18 +47,43 @@ export function RecentShiftsList({
           end != null ? end.getTime() - start.getTime() : null;
         const verified = s.verified_at != null;
         const editable = s.status !== "open" && !verified;
+        const worked = s.concept === "worked";
 
         return (
           <MotionListItem key={s.id} hover={false}>
             <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-surface p-3.5">
               <div className="min-w-0 flex-1 space-y-0.5">
-                <p className="text-sm font-medium">{formatShortDate(start)}</p>
-                <p className="text-xs text-muted-foreground tabular-nums">
-                  {formatTimeOfDay(start)}
-                  {" – "}
-                  {end ? formatTimeOfDay(end) : "abierto"}
-                  {durationMs != null ? ` · ${formatDuration(durationMs)}` : ""}
-                </p>
+                {worked ? (
+                  <>
+                    <p className="text-sm font-medium">
+                      {formatShortDate(start)}
+                    </p>
+                    <p className="text-xs text-muted-foreground tabular-nums">
+                      {formatTimeOfDay(start)}
+                      {" – "}
+                      {end ? formatTimeOfDay(end) : "abierto"}
+                      {durationMs != null
+                        ? ` · ${formatDuration(durationMs)}`
+                        : ""}
+                    </p>
+                  </>
+                ) : (
+                  // A non-worked day has no real time range: the 09:00–17:00 is
+                  // synthesized when the employer loads it (see migration 0026).
+                  // Showing it would tell the employee she worked hours she
+                  // never worked, so we lead with the concept and its hours.
+                  <>
+                    <p className="text-sm font-medium">
+                      {conceptLabel(s.concept)}
+                    </p>
+                    <p className="text-xs text-muted-foreground tabular-nums">
+                      {formatShortDate(start)}
+                      {durationMs != null
+                        ? ` · ${formatDuration(durationMs)} pagadas`
+                        : ""}
+                    </p>
+                  </>
+                )}
                 {s.notes && (
                   <p className="truncate text-xs italic text-muted-foreground">
                     {s.notes}
@@ -67,11 +92,6 @@ export function RecentShiftsList({
               </div>
 
               <div className="flex items-center gap-2">
-                {s.concept !== "worked" && (
-                  <span className="inline-flex items-center rounded-full border border-border bg-surface-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-                    {conceptShortLabel(s.concept)}
-                  </span>
-                )}
                 {verified && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-accent-soft px-2 py-0.5 text-[11px] font-medium text-accent-soft-foreground">
                     <ShieldCheck className="h-3 w-3" aria-hidden />

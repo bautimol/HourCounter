@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { sendPushToUsers } from "@/lib/push";
+import { friendlyError } from "@/lib/errors";
 
 export type ClockState = {
   error: string | null;
@@ -71,7 +72,12 @@ export async function clockInAction(
   });
 
   if (error) {
-    return { error: error.message };
+    return {
+      error: friendlyError(
+        error.message,
+        "No pudimos registrar el inicio de tu turno. Probá de nuevo.",
+      ),
+    };
   }
 
   revalidatePath(`/app/groups/${groupId}`);
@@ -98,7 +104,12 @@ export async function clockOutAction(
   });
 
   if (error) {
-    return { error: error.message };
+    return {
+      error: friendlyError(
+        error.message,
+        "No pudimos cerrar tu turno. Probá de nuevo.",
+      ),
+    };
   }
 
   // Read back what was actually stored so the confirmation shows the recorded

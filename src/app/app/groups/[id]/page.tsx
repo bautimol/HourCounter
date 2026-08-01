@@ -179,7 +179,7 @@ export default async function GroupDetailPage({
             .limit(10),
           supabase
             .from("time_entries")
-            .select("clock_in, clock_out, status")
+            .select("clock_in, clock_out, status, concept")
             .eq("employee_profile_id", profile.id)
             .gte("clock_in", startOfTodayIso()),
         ]);
@@ -194,8 +194,11 @@ export default async function GroupDetailPage({
 
       recentShifts = (recent ?? []) as RecentShift[];
 
+      // "Hoy llevás X" is time actually worked: a feriado the employer loaded
+      // for today is paid, but she did not work those hours.
       closedTodayMinutes = (todayEntries ?? []).reduce<number>((sum, e) => {
         if (e.status === "open" || !e.clock_out) return sum;
+        if ((e.concept ?? "worked") !== "worked") return sum;
         const ms =
           new Date(e.clock_out).getTime() - new Date(e.clock_in).getTime();
         return sum + Math.max(0, Math.floor(ms / 60_000));

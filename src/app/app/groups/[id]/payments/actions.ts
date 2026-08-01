@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { friendlyError } from "@/lib/errors";
 
 export type CreatePaymentState = {
   error: string | null;
@@ -53,7 +54,12 @@ export async function createPaymentAction(
   });
 
   if (error) {
-    return { error: error.message };
+    return {
+      error: friendlyError(
+        error.message,
+        "No pudimos registrar el pago. Probá de nuevo.",
+      ),
+    };
   }
 
   const paymentId = data as unknown as string | null;
@@ -74,12 +80,30 @@ export async function deletePaymentAction(
 ): Promise<DeletePaymentState> {
   const supabase = await createClient();
 
-  const { error } = await supabase
+  // `.select()` so we can tell "deleted" from "matched nothing": RLS filters
+  // rows out instead of erroring, so a non-employer (or a stale id) got zero
+  // rows, no error, and a redirect that looked like success.
+  const { data: deleted, error } = await supabase
     .from("payments")
     .delete()
-    .eq("id", paymentId);
+    .eq("id", paymentId)
+    .select("id");
 
-  if (error) return { error: error.message };
+  if (error) {
+    return {
+      error: friendlyError(
+        error.message,
+        "No pudimos eliminar el pago. Probá de nuevo.",
+      ),
+    };
+  }
+
+  if (!deleted || deleted.length === 0) {
+    return {
+      error:
+        "No pudimos eliminar el pago: puede que ya no exista o que no tengas permiso.",
+    };
+  }
 
   revalidatePath(`/app/groups/${groupId}/payments`);
   redirect(`/app/groups/${groupId}/payments`);

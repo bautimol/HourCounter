@@ -205,12 +205,12 @@ export function ShiftBulkActions({
                   {verified ? (
                     <Badge variant="accent">
                       <ShieldCheck className="mr-1 h-3 w-3" aria-hidden />
-                      Verificado
+                      Aprobado
                     </Badge>
                   ) : s.status === "needs_review" ? (
                     <Badge variant="muted">Para revisar</Badge>
                   ) : (
-                    <Badge variant="muted">Pendiente</Badge>
+                    <Badge variant="muted">Sin aprobar</Badge>
                   )}
                   <ChevronRight
                     className="h-4 w-4 text-muted-foreground"

@@ -334,11 +334,11 @@ function ClockOutForm({
         <SubmitButton
           variant="danger"
           size="lg"
-          pendingText="Cerrando turno…"
+          pendingText="Terminando turno…"
           className="w-full rounded-xl shadow-lg shadow-red-600/25 ring-1 ring-inset ring-white/10"
         >
           <Square className="h-5 w-5 fill-current" aria-hidden />
-          Cerrar turno
+          Terminar turno
         </SubmitButton>
 
         {state.error && <ErrorMessage>{state.error}</ErrorMessage>}

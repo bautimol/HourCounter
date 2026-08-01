@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ClipboardCheck, ShieldCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { friendlyError } from "@/lib/errors";
 import { Card } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
 import { ShiftBulkActions } from "./shift-bulk-actions";
@@ -9,9 +10,11 @@ import { ShiftBulkActions } from "./shift-bulk-actions";
 type Filter = "pending" | "verified" | "needs_review" | "all";
 const FILTERS: Filter[] = ["pending", "verified", "needs_review", "all"];
 
+// Labels are user-facing only: the `?status=` values (and the DB columns
+// behind them) keep saying "verified".
 const FILTER_LABEL: Record<Filter, string> = {
-  pending: "Pendientes",
-  verified: "Verificados",
+  pending: "Sin aprobar",
+  verified: "Aprobados",
   needs_review: "Para revisar",
   all: "Todos",
 };
@@ -130,7 +133,7 @@ export default async function ShiftsListPage({
           { label: group.name, href: `/app/groups/${id}` },
           { label: "Turnos" },
         ]}
-        title="Verificación de turnos"
+        title="Aprobación de turnos"
         subtitle="Aprobá, editá o flageá los turnos cerrados de tus empleados."
         icon={<ClipboardCheck className="h-5 w-5" aria-hidden />}
         accent="emerald"
@@ -173,7 +176,10 @@ export default async function ShiftsListPage({
       {error && (
         <Card className="border-danger/40">
           <p className="px-5 py-4 text-sm text-danger">
-            Error cargando turnos: {error.message}
+            {friendlyError(
+              error.message,
+              "No pudimos cargar los turnos. Recargá la página.",
+            )}
           </p>
         </Card>
       )}
@@ -183,7 +189,7 @@ export default async function ShiftsListPage({
           <div className="flex flex-col items-center gap-2 px-5 py-10 text-center text-sm text-muted-foreground">
             <ShieldCheck className="h-5 w-5" aria-hidden />
             {filter === "pending"
-              ? "Todo al día. No hay turnos pendientes de verificar."
+              ? "Todo al día. No hay turnos sin aprobar."
               : "No hay turnos en este filtro."}
           </div>
         </Card>

@@ -123,8 +123,8 @@ function SingleBanner({ shift }: { shift: OpenShiftSummary }) {
 
 /**
  * Submit button for the open-shift banner. Uses `useFormStatus` so the user
- * gets visible feedback ("Cerrando…" + spinner, disabled state) while the
- * server action runs — important on slow 3G where the round-trip can take
+ * gets visible feedback ("Terminando turno…" + spinner, disabled state) while
+ * the server action runs — important on slow 3G where the round-trip can take
  * a few seconds and a silent button looks broken.
  */
 function CloseShiftButton() {
@@ -133,14 +133,16 @@ function CloseShiftButton() {
     <button
       type="submit"
       disabled={pending}
-      className="inline-flex items-center gap-1.5 rounded-lg bg-danger px-3 py-1.5 text-sm font-medium text-white shadow-sm shadow-red-700/25 ring-1 ring-inset ring-white/15 transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+      // min-h-11 (44px) is the minimum comfortable touch target: this is the
+      // one-tap close on a phone, it can't be a 32px sliver.
+      className="inline-flex min-h-11 items-center gap-1.5 rounded-lg bg-danger px-4 py-2 text-sm font-medium text-white shadow-sm shadow-red-700/25 ring-1 ring-inset ring-white/15 transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
     >
       {pending ? (
         <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
       ) : (
         <Square className="h-3.5 w-3.5 fill-current" aria-hidden />
       )}
-      {pending ? "Cerrando…" : "Terminar turno"}
+      {pending ? "Terminando turno…" : "Terminar turno"}
     </button>
   );
 }

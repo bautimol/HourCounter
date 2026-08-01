@@ -18,9 +18,11 @@
   /* Text */
   --foreground: #0f0f12;            /* near-black */
   --muted-foreground: #6b6f76;      /* warmer than zinc-500 */
-  /* Brand (emerald) */
-  --accent: #059669;                /* emerald-600 */
-  --accent-hover: #047857;          /* emerald-700 */
+  /* Brand (emerald). White-on-accent has to clear 4.5:1 for normal text:
+     emerald-600 (#059669) only reached ~3.8:1, so buttons and badges were
+     below AA. emerald-700 clears it without changing the brand. */
+  --accent: #047857;                /* emerald-700 */
+  --accent-hover: #065f46;          /* emerald-800 */
   --accent-foreground: #ffffff;
   --accent-soft: #d1fae5;
   --accent-soft-foreground: #064e3b;
@@ -121,9 +123,13 @@ pre,
   color: var(--foreground);
 }
 
-/* Cleaner default focus ring */
+/* Visible keyboard focus. This used to be `outline: none`, which removed the
+   ring from every link, tab, checkbox and bare <button> in the app — only the
+   <Button> primitive drew its own. Keyboard and screen-magnifier users had no
+   way to tell where they were. */
 *:focus-visible {
-  outline: none;
+  outline: 2px solid rgb(var(--ring-color));
+  outline-offset: 2px;
 }
 
 /* Hide native number-input spinners across browsers. The keyboard arrows

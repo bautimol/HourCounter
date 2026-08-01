@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { friendlyError } from "@/lib/errors";
 
 export type AuthState = {
   error: string | null;
@@ -34,7 +35,12 @@ export async function loginAction(
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
-    return { error: error.message };
+    return {
+      error: friendlyError(
+        error.message,
+        "No pudimos iniciar sesión. Probá de nuevo.",
+      ),
+    };
   }
 
   revalidatePath("/", "layout");

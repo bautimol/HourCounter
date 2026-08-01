@@ -24,7 +24,7 @@ function ConfirmingSubmit({ dayLabel }: { dayLabel: string }) {
           if (!ok) e.preventDefault();
         }
       }}
-      className="inline-flex items-center gap-1.5 rounded-md border border-danger/30 bg-surface px-2.5 py-1.5 text-xs text-danger hover:bg-danger/10 disabled:cursor-not-allowed disabled:opacity-50"
+      className="inline-flex min-h-11 items-center gap-1.5 rounded-md border border-danger/30 bg-surface px-2.5 text-xs text-danger hover:bg-danger/10 disabled:cursor-not-allowed disabled:opacity-50"
     >
       {pending ? (
         <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />

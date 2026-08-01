@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getOrigin } from "@/lib/origin";
+import { friendlyError } from "@/lib/errors";
 
 export type SignupState = {
   error: string | null;
@@ -63,7 +64,24 @@ export async function signupAction(
   });
 
   if (error) {
-    return { error: error.message, message: null };
+    return {
+      error: friendlyError(
+        error.message,
+        "No pudimos crear la cuenta. Probá de nuevo.",
+      ),
+      message: null,
+    };
+  }
+
+  // Signing up with an already-registered email answers 200 with an empty
+  // identities array (Supabase hides whether the address exists). Without this
+  // check we'd promise a confirmation email that never gets sent.
+  if (data.user?.identities?.length === 0) {
+    return {
+      error:
+        "Ya existe una cuenta con ese email. Entrá desde «Iniciar sesión» acá abajo.",
+      message: null,
+    };
   }
 
   if (data.session) {

@@ -2,7 +2,7 @@
 
 import { motion, useMotionValueEvent, useScroll } from "motion/react";
 import Link from "next/link";
-import { useRef, useState, type ReactNode } from "react";
+import { useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { Clock3, LogOut, Menu, X } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/cn";
@@ -11,6 +11,17 @@ export type NavLink = {
   label: string;
   href: string;
 };
+
+/**
+ * Signing out is one tap away from every screen, and getting back in means
+ * retyping an email + password most people don't remember. Ask first.
+ */
+function confirmSignout(e: MouseEvent<HTMLButtonElement>) {
+  const ok = window.confirm(
+    "¿Cerrar sesión? Vas a tener que poner tu email y contraseña para volver a entrar.",
+  );
+  if (!ok) e.preventDefault();
+}
 
 /**
  * Resizable, sticky app navbar inspired by ui.aceternity.com/components/resizable-navbar.
@@ -110,6 +121,7 @@ export function AppNavbar({
           <form action="/auth/signout" method="post">
             <button
               type="submit"
+              onClick={confirmSignout}
               className="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-2.5 py-1.5 text-xs text-foreground transition-colors hover:bg-surface-muted"
             >
               <LogOut className="h-3.5 w-3.5" aria-hidden />
@@ -167,6 +179,7 @@ export function AppNavbar({
                 <form action="/auth/signout" method="post">
                   <button
                     type="submit"
+                    onClick={confirmSignout}
                     className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-danger transition-colors hover:bg-danger/10"
                   >
                     <LogOut className="h-4 w-4" aria-hidden />

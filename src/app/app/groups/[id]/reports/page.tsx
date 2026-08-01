@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
 import {
   AR_TIME_ZONE,
+  conceptShortLabel,
   formatCurrency,
   formatDuration,
   formatShortDate,
@@ -86,8 +87,21 @@ export default async function ReportsPage({
     lastDayOfMonth(arToday.y, arToday.m),
   );
 
-  const fromStr = from ?? defaultFromStr;
-  const toStr = to ?? defaultToStr;
+  // A hand-edited or stale URL must not blank the page: anything that isn't a
+  // real calendar day falls back to the default period, silently.
+  const isValidDayStr = (s: string | undefined): s is string =>
+    typeof s === "string" &&
+    /^\d{4}-\d{2}-\d{2}$/.test(s) &&
+    Number.isFinite(arDayStartUtc(s).getTime());
+
+  const requestedFrom = isValidDayStr(from) ? from : defaultFromStr;
+  const requestedTo = isValidDayStr(to) ? to : defaultToStr;
+
+  // An inverted range would query an empty window and read as "no hubo turnos",
+  // which is a lie. Fall back to the default period instead.
+  const inverted = requestedFrom > requestedTo;
+  const fromStr = inverted ? defaultFromStr : requestedFrom;
+  const toStr = inverted ? defaultToStr : requestedTo;
 
   const fromInstant = arDayStartUtc(fromStr);
   const toInstant = new Date(
@@ -101,7 +115,7 @@ export default async function ReportsPage({
   // ---------------------------------------------------------------------------
   const selectedEmployee = employee && employee !== "" ? employee : null;
 
-  const shiftSelect = `employee_profile_id, clock_in, clock_out, hourly_rate,
+  const shiftSelect = `employee_profile_id, clock_in, clock_out, hourly_rate, concept,
      employee_profile:employee_profiles!inner(
        id, hourly_rate, currency,
        position:positions(hourly_rate, currency),
@@ -151,6 +165,7 @@ export default async function ReportsPage({
     clock_in: string;
     clock_out: string | null;
     hourly_rate: number | null;
+    concept: string | null;
     employee_profile?: {
       id: string;
       hourly_rate: number | null;
@@ -209,6 +224,9 @@ export default async function ReportsPage({
       ms: Math.max(0, ms),
       rate: rate != null ? Number(rate) : null,
       currency,
+      // Rows written before 0026 have no concept: they can only be clocked
+      // shifts, so they are worked hours.
+      concept: s.concept ?? "worked",
     };
   }
 
@@ -223,7 +241,9 @@ export default async function ReportsPage({
     .filter((s) => (selectedEmployee ? s.memberId === selectedEmployee : true));
 
   // ---------------------------------------------------------------------------
-  // Per-employee aggregation (hours + money value of those hours)
+  // Per-employee aggregation. Hours split by concept: only `worked` is time she
+  // actually worked; feriados / vacaciones are paid days nobody showed up for.
+  // The money adds up BOTH, because both get paid.
   // ---------------------------------------------------------------------------
   const byMember = new Map<
     string,
@@ -231,7 +251,8 @@ export default async function ReportsPage({
       memberId: string;
       name: string;
       avatarUrl: string | null;
-      totalMs: number;
+      workedMs: number;
+      paidOffMs: number;
       value: number;
       shiftCount: number;
       currency: string;
@@ -241,9 +262,11 @@ export default async function ReportsPage({
 
   for (const s of shifts) {
     const hours = s.ms / MS_PER_HOUR;
+    const worked = s.concept === "worked";
     const existing = byMember.get(s.memberId);
     if (existing) {
-      existing.totalMs += s.ms;
+      if (worked) existing.workedMs += s.ms;
+      else existing.paidOffMs += s.ms;
       existing.shiftCount += 1;
       if (s.rate != null) existing.value += hours * s.rate;
       else existing.missingRate = true;
@@ -252,7 +275,8 @@ export default async function ReportsPage({
         memberId: s.memberId,
         name: s.name,
         avatarUrl: s.avatarUrl,
-        totalMs: s.ms,
+        workedMs: worked ? s.ms : 0,
+        paidOffMs: worked ? 0 : s.ms,
         value: s.rate != null ? hours * s.rate : 0,
         shiftCount: 1,
         currency: s.currency,
@@ -262,11 +286,18 @@ export default async function ReportsPage({
   }
 
   const perEmployee = [...byMember.values()].sort(
-    (a, b) => b.totalMs - a.totalMs,
+    (a, b) => b.workedMs + b.paidOffMs - (a.workedMs + a.paidOffMs),
   );
 
   // KPI totals
-  const totalHoursMs = shifts.reduce((sum, s) => sum + s.ms, 0);
+  const workedMs = shifts.reduce(
+    (sum, s) => sum + (s.concept === "worked" ? s.ms : 0),
+    0,
+  );
+  const paidOffMs = shifts.reduce(
+    (sum, s) => sum + (s.concept === "worked" ? 0 : s.ms),
+    0,
+  );
   const totalValue = perEmployee.reduce((sum, e) => sum + e.value, 0);
   const totalShifts = shifts.length;
   const employeeCount = perEmployee.length;
@@ -332,7 +363,7 @@ export default async function ReportsPage({
           { label: "Reportes" },
         ]}
         title="Reportes"
-        subtitle="Horas trabajadas y su valor en el período seleccionado (turnos verificados)."
+        subtitle="Horas trabajadas y el valor a pagar en el período seleccionado (turnos verificados)."
         icon={<BarChart3 className="h-5 w-5" aria-hidden />}
         accent="emerald"
       />
@@ -363,17 +394,27 @@ export default async function ReportsPage({
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <Kpi
           label="Horas trabajadas"
-          value={formatDuration(totalHoursMs)}
+          value={formatDuration(workedMs)}
+          hint={
+            paidOffMs > 0
+              ? `+ ${formatDuration(paidOffMs)} de feriados y vacaciones`
+              : undefined
+          }
           icon={<Clock className="h-4 w-4" aria-hidden />}
           accent
         />
         <Kpi
-          label="Valor de esas horas"
+          label="Valor del período"
           value={formatCurrency(totalValue, topCurrency)}
+          hint={
+            paidOffMs > 0
+              ? "incluye feriados y vacaciones"
+              : undefined
+          }
           icon={<Coins className="h-4 w-4" aria-hidden />}
         />
         <Kpi
-          label={selectedEmployee ? "Turnos" : "Empleados con turnos"}
+          label={selectedEmployee ? "Registros" : "Empleados con turnos"}
           value={String(selectedEmployee ? totalShifts : employeeCount)}
           icon={<Users className="h-4 w-4" aria-hidden />}
         />
@@ -415,8 +456,11 @@ export default async function ReportsPage({
                           {row.name}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {formatDuration(row.totalMs)} · {row.shiftCount}{" "}
-                          {row.shiftCount === 1 ? "turno" : "turnos"}
+                          {formatDuration(row.workedMs)} trabajadas
+                          {row.paidOffMs > 0 &&
+                            ` · +${formatDuration(row.paidOffMs)} feriados/vacaciones`}{" "}
+                          · {row.shiftCount}{" "}
+                          {row.shiftCount === 1 ? "registro" : "registros"}
                           {row.missingRate && " · sin tarifa"}
                         </p>
                       </div>
@@ -461,8 +505,13 @@ export default async function ReportsPage({
                       className="flex items-center justify-between gap-3 px-5 py-3"
                     >
                       <div className="min-w-0">
-                        <p className="text-sm font-medium capitalize">
+                        <p className="flex items-center gap-2 text-sm font-medium capitalize">
                           {formatShortDate(new Date(s.clockIn))}
+                          {s.concept !== "worked" && (
+                            <Badge variant="muted">
+                              {conceptShortLabel(s.concept)}
+                            </Badge>
+                          )}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {formatDuration(s.ms)}
@@ -490,7 +539,7 @@ export default async function ReportsPage({
       <section className="space-y-3">
         <h2 className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
           <BarChart3 className="h-4 w-4" aria-hidden />
-          Valor de horas trabajadas, mes a mes
+          Valor a pagar, mes a mes
           <span className="text-[11px] font-normal text-muted-foreground">
             (últimos 6 meses)
           </span>
@@ -527,11 +576,13 @@ export default async function ReportsPage({
 function Kpi({
   label,
   value,
+  hint,
   icon,
   accent = false,
 }: {
   label: string;
   value: string;
+  hint?: string;
   icon: React.ReactNode;
   accent?: boolean;
 }) {
@@ -554,6 +605,9 @@ function Kpi({
       >
         {value}
       </p>
+      {hint && (
+        <p className="mt-1 text-[11px] text-muted-foreground">{hint}</p>
+      )}
     </div>
   );
 }

@@ -69,7 +69,7 @@ export function PeriodPicker({
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-1.5">
+      <div className="flex flex-wrap items-center gap-2">
         <Calendar
           className="h-4 w-4 text-muted-foreground"
           aria-hidden
@@ -81,7 +81,8 @@ export function PeriodPicker({
             onClick={() => onPresetClick(p)}
             disabled={isPending}
             className={cn(
-              "rounded-full px-3 py-1 text-xs font-medium transition-colors",
+              // min-h-11: thumb-sized target on the phone this is used from.
+              "inline-flex min-h-11 items-center rounded-full px-4 text-xs font-medium transition-colors",
               preset === p
                 ? "bg-accent text-accent-foreground"
                 : "bg-surface-muted text-muted-foreground hover:bg-surface-muted/70 hover:text-foreground",
@@ -100,7 +101,7 @@ export function PeriodPicker({
               type="date"
               value={from}
               onChange={(e) => setFrom(e.target.value)}
-              className="h-9 rounded-md border border-border bg-surface px-2 text-sm"
+              className="min-h-11 rounded-md border border-border bg-surface px-3 text-sm"
             />
           </label>
           <label className="flex flex-col gap-1 text-xs text-muted-foreground">
@@ -109,14 +110,14 @@ export function PeriodPicker({
               type="date"
               value={to}
               onChange={(e) => setTo(e.target.value)}
-              className="h-9 rounded-md border border-border bg-surface px-2 text-sm"
+              className="min-h-11 rounded-md border border-border bg-surface px-3 text-sm"
             />
           </label>
           <button
             type="button"
             onClick={onCustomApply}
             disabled={isPending || !from || !to}
-            className="h-9 rounded-md bg-accent px-3 text-xs font-medium text-accent-foreground disabled:opacity-60"
+            className="min-h-11 rounded-md bg-accent px-5 text-sm font-medium text-accent-foreground disabled:opacity-60"
           >
             Aplicar
           </button>
