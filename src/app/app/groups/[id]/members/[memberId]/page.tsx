@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import {
   CalendarPlus,
   Coins,
+  FileSpreadsheet,
   FileText,
   Pencil,
   Receipt,
@@ -239,6 +240,15 @@ export default async function MemberDetailPage({
                 >
                   <CalendarPlus className="h-4 w-4" aria-hidden />
                   Agregar día
+                </Link>
+              )}
+              {profile && (
+                <Link
+                  href={`/app/groups/${id}/members/${memberId}/report`}
+                  className="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-muted"
+                >
+                  <FileSpreadsheet className="h-4 w-4" aria-hidden />
+                  Reporte
                 </Link>
               )}
               <Link

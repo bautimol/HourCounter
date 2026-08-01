@@ -60,6 +60,37 @@ export function conceptLabel(concept: string | null | undefined): string {
   }
 }
 
+/**
+ * "02/07/26" — numeric date for the printable per-day report, which the
+ * employer hands to the employee on paper.
+ */
+export function formatDayMonthYear(date: Date): string {
+  return new Intl.DateTimeFormat("es-AR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "2-digit",
+    timeZone: AR_TIME_ZONE,
+  }).format(date);
+}
+
+/** The Argentina calendar day of an instant, as YYYY-MM-DD (for grouping). */
+export function arCalendarDay(date: Date): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    timeZone: AR_TIME_ZONE,
+  }).format(date);
+}
+
+/** "8,00" — hours with two decimals, es-AR style (comma). */
+export function formatHours(hours: number): string {
+  return new Intl.NumberFormat("es-AR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(hours);
+}
+
 /** Compact variant for table cells and badges. */
 export function conceptShortLabel(concept: string | null | undefined): string {
   switch (concept) {

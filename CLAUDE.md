@@ -297,6 +297,7 @@ HourCounter/
 | PWA install (manifest + icons + SW)         | ✅ done        |
 | Reportes (horas trabajadas + su valor, filtro por empleado) | ✅ done |
 | Días manuales del empleador (feriado / vacaciones / olvidó fichar) | ✅ done |
+| Reporte por día de un empleado (imprimible / compartible) | ✅ done |
 | Cambio de tarifa con fecha de vigencia (retroactivo opt-in) | ✅ done |
 | QR code for invitations                     | ⏳ nice-to-have |
 | Multi-employer per group (UI)               | ⏳ schema OK, UI pending |
