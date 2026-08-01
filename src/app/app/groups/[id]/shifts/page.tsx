@@ -134,7 +134,7 @@ export default async function ShiftsListPage({
           { label: "Turnos" },
         ]}
         title="Aprobación de turnos"
-        subtitle="Aprobá, editá o flageá los turnos cerrados de tus empleados."
+        subtitle="Aprobá, corregí o dejá para revisar los turnos cerrados de tus empleados."
         icon={<ClipboardCheck className="h-5 w-5" aria-hidden />}
         accent="emerald"
       />

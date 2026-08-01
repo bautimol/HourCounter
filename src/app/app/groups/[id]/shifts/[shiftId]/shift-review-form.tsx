@@ -123,8 +123,8 @@ export function ShiftReviewForm({
             <option value="needs_review">Marcar para revisar</option>
           </Select>
           <Hint>
-            Marcar para revisar lo deja flageado para volver más tarde sin
-            aprobarlo.
+            &quot;Marcar para revisar&quot; lo deja pendiente para volver más
+            tarde, sin aprobarlo.
           </Hint>
         </Field>
 
