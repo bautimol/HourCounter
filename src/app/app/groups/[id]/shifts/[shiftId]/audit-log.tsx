@@ -1,12 +1,12 @@
 import { History } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/card";
-import { AR_TIME_ZONE, formatTimeOfDay } from "@/lib/format";
+import { AR_TIME_ZONE, conceptLabel, formatTimeOfDay } from "@/lib/format";
 
 export type AuditEntry = {
   id: string;
   edited_at: string;
-  field: "clock_out" | "notes" | "status" | "verified";
+  field: "clock_out" | "notes" | "status" | "verified" | "created" | "deleted";
   before_value: string | null;
   after_value: string | null;
   editor: {
@@ -64,6 +64,13 @@ function describeEdit(
   before: string | null,
   after: string | null,
 ): string {
+  if (field === "created") {
+    // Manual days carry their concept as the "after" value.
+    return after === "worked" || after == null
+      ? "cargó este día a mano"
+      : `cargó este día a mano (${conceptLabel(after).toLowerCase()})`;
+  }
+
   if (field === "verified") {
     if (after === "verified") return "aprobó el turno";
     if (before === "verified") return "desaprobó el turno";

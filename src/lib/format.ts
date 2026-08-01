@@ -28,6 +28,56 @@ export function paymentPeriodLabel(
   }
 }
 
+/**
+ * What a day IS. Everything the employee clocks is "worked"; the rest can only
+ * be entered by an employer (a holiday or a vacation day still gets paid even
+ * though nobody shows up, so it can never be clocked in).
+ */
+export const TIME_ENTRY_CONCEPTS = [
+  "worked",
+  "holiday",
+  "vacation_employee",
+  "vacation_employer",
+  "other",
+] as const;
+
+export type TimeEntryConcept = (typeof TIME_ENTRY_CONCEPTS)[number];
+
+export function conceptLabel(concept: string | null | undefined): string {
+  switch (concept) {
+    case "worked":
+      return "Trabajado";
+    case "holiday":
+      return "Feriado";
+    case "vacation_employee":
+      return "Vacaciones del empleado";
+    case "vacation_employer":
+      return "Vacaciones del empleador";
+    case "other":
+      return "Otro";
+    default:
+      return "—";
+  }
+}
+
+/** Compact variant for table cells and badges. */
+export function conceptShortLabel(concept: string | null | undefined): string {
+  switch (concept) {
+    case "worked":
+      return "Trabajado";
+    case "holiday":
+      return "Feriado";
+    case "vacation_employee":
+      return "Vac. empleado";
+    case "vacation_employer":
+      return "Vac. empleador";
+    case "other":
+      return "Otro";
+    default:
+      return "—";
+  }
+}
+
 export function fixedAmountFrequencyLabel(
   freq: string | null | undefined,
   customDays?: number | null,

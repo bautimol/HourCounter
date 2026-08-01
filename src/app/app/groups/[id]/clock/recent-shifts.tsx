@@ -3,6 +3,7 @@ import { MessageSquare, ShieldCheck } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { MotionList, MotionListItem } from "@/components/motion-list";
 import {
+  conceptShortLabel,
   formatDuration,
   formatShortDate,
   formatTimeOfDay,
@@ -16,6 +17,8 @@ export type RecentShift = {
   notes: string | null;
   verified_at: string | null;
   expected_minutes: number | null;
+  /** "worked" = clocked by the employee; anything else the employer loaded. */
+  concept: string;
 };
 
 export function RecentShiftsList({
@@ -64,6 +67,11 @@ export function RecentShiftsList({
               </div>
 
               <div className="flex items-center gap-2">
+                {s.concept !== "worked" && (
+                  <span className="inline-flex items-center rounded-full border border-border bg-surface-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                    {conceptShortLabel(s.concept)}
+                  </span>
+                )}
                 {verified && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-accent-soft px-2 py-0.5 text-[11px] font-medium text-accent-soft-foreground">
                     <ShieldCheck className="h-3 w-3" aria-hidden />

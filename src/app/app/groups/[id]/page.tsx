@@ -172,7 +172,7 @@ export default async function GroupDetailPage({
           supabase
             .from("time_entries")
             .select(
-              "id, clock_in, clock_out, status, notes, verified_at, expected_minutes",
+              "id, clock_in, clock_out, status, notes, verified_at, expected_minutes, concept",
             )
             .eq("employee_profile_id", profile.id)
             .order("clock_in", { ascending: false })

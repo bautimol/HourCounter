@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ErrorMessage } from "@/components/ui/input";
 import {
+  conceptShortLabel,
   formatDuration,
   formatShortDate,
   formatTimeOfDay,
@@ -28,6 +29,8 @@ export type BulkShiftRow = {
   notes: string | null;
   verifiedAt: string | null;
   withinGeofence: boolean | null;
+  /** "worked" for anything the employee clocked; otherwise a manual day. */
+  concept: string;
   member: {
     id: string;
     display_name: string | null;
@@ -185,6 +188,11 @@ export function ShiftBulkActions({
                 </div>
 
                 <div className="flex items-center gap-2">
+                  {s.concept !== "worked" && (
+                    <Badge variant="neutral">
+                      {conceptShortLabel(s.concept)}
+                    </Badge>
+                  )}
                   {s.withinGeofence === false && (
                     <span
                       title="Fichó fuera del radio o sin ubicación"

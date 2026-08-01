@@ -137,6 +137,24 @@ read policy (which lets every member see profile scalars).
     Caveat: a report over an *already-paid* period still recomputes at
     the current live rate for those (unfrozen) shifts — pre-existing
     behavior, acceptable since the payment record itself never moves.
+14. **Not every paid day is a worked day** (0026). `time_entries.concept`
+    says what a day IS: `worked` (everything the employee clocks) plus
+    `holiday` / `vacation_employee` / `vacation_employer` / `other`, which
+    only an employer can create — a holiday is paid although nobody shows
+    up, so it can never be clocked. `created_by` is NULL for clocked rows
+    and set for typed ones; that flag is what makes a row deletable
+    (`employer_delete_entry` refuses anything clocked — real shifts get
+    corrected, never destroyed). Manual days are inserted already verified
+    (the employer typed them, there is nothing to approve) with times
+    synthesized at 09:00 ART so AR-local day math lands right. In the pay
+    draft they **pay their hours like any other entry but do NOT count
+    toward `per_day_worked` fixed amounts** — a viático is travel/meal
+    money and she did not travel on a holiday.
+    ⚠️ 0025 and 0026 were written in parallel and both rewrote
+    `calculate_pay_draft`; whichever ran last silently disabled the other.
+    The live version merges both (per-shift `coalesce(snapshot, live)`
+    pricing **and** `count(distinct ar_day) filter (where concept =
+    'worked')`). If that function is ever recreated again, keep both.
 
 ## Repository layout
 
@@ -235,7 +253,8 @@ HourCounter/
 │       ├── 0022_payment_overlap_and_ondelete.sql  no-overlap constraint on payments + person FKs → SET NULL
 │       ├── 0023_rpc_hardening.sql           RPC hardening: REVOKE sensitive fns, gate effective_employee_profile by membership
 │       ├── 0024_revoke_record_shift_edit_public.sql  completes 0023 (revoke record_shift_edit from PUBLIC)
-│       └── 0025_retroactive_rates.sql       time_entries.hourly_rate snapshot (per-shift frozen rate) + change_employee_rate(profile,new_rate,effective_from) + calculate_pay_draft values hours per-shift with mixed_rates flag
+│       ├── 0025_retroactive_rates.sql       time_entries.hourly_rate snapshot (per-shift frozen rate) + change_employee_rate(profile,new_rate,effective_from) + calculate_pay_draft values hours per-shift with mixed_rates flag
+│       └── 0026_manual_entries.sql          time_entries.concept enum + created_by (NULL = clocked, set = employer typed it) + employer_create_entry / employer_delete_entry + calculate_pay_draft MERGED with 0025 (per-shift rates AND concept-aware day counting) + by_concept breakdown
 ├── .env.local                      Supabase URL + anon key (gitignored)
 ├── .env.local.example              template
 ├── package.json
@@ -277,6 +296,7 @@ HourCounter/
 | Push notifications (PWA + Web Push)         | ✅ done        |
 | PWA install (manifest + icons + SW)         | ✅ done        |
 | Reportes (horas trabajadas + su valor, filtro por empleado) | ✅ done |
+| Días manuales del empleador (feriado / vacaciones / olvidó fichar) | ✅ done |
 | Cambio de tarifa con fecha de vigencia (retroactivo opt-in) | ✅ done |
 | QR code for invitations                     | ⏳ nice-to-have |
 | Multi-employer per group (UI)               | ⏳ schema OK, UI pending |

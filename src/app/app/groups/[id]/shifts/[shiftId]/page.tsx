@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
 import {
+  conceptShortLabel,
   formatDuration,
   formatShortDate,
   formatTimeOfDay,
@@ -33,6 +34,7 @@ type ShiftRow = {
   clock_in_lat: number | null;
   clock_in_lng: number | null;
   within_geofence: boolean | null;
+  concept: string;
   employee_profile: {
     group_member: Member | Member[] | null;
   } | null;
@@ -72,7 +74,7 @@ export default async function ShiftReviewPage({
     .from("time_entries")
     .select(
       `id, clock_in, clock_out, status, notes, verified_at, verified_by,
-       expected_minutes, clock_in_lat, clock_in_lng, within_geofence,
+       expected_minutes, clock_in_lat, clock_in_lng, within_geofence, concept,
        employee_profile:employee_profiles!inner(
          group_member:group_members!inner(
            id, display_name, avatar_url, group_id
@@ -183,6 +185,9 @@ export default async function ShiftReviewPage({
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {shift.concept !== "worked" && (
+              <Badge variant="neutral">{conceptShortLabel(shift.concept)}</Badge>
+            )}
             {verified ? (
               <Badge variant="accent">
                 <ShieldCheck className="mr-1 h-3 w-3" aria-hidden />

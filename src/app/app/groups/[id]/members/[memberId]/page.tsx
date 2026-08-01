@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import {
+  CalendarPlus,
   Coins,
   FileText,
   Pencil,
@@ -14,10 +15,14 @@ import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/card";
 import {
+  conceptShortLabel,
   fixedAmountFrequencyLabel,
   formatCurrency,
+  formatDuration,
+  formatShortDate,
   paymentPeriodLabel,
 } from "@/lib/format";
+import { DeleteDayButton } from "./delete-day-button";
 
 type EffectiveProfile = {
   id: string;
@@ -96,6 +101,13 @@ export default async function MemberDetailPage({
     custom_days: number | null;
   }[] = [];
   let notes: string | null = null;
+  let manualDays: {
+    id: string;
+    clock_in: string;
+    clock_out: string | null;
+    concept: string;
+    notes: string | null;
+  }[] = [];
 
   if (member.role === "employee") {
     const { data: profileRow } = await supabase
@@ -136,6 +148,18 @@ export default async function MemberDetailPage({
         .maybeSingle();
 
       notes = notesRow?.notes ?? null;
+
+      // Days the employer typed in (holidays, vacation, forgotten shifts).
+      // `created_by is not null` is what marks a row as manual.
+      const { data: manualRows } = await supabase
+        .from("time_entries")
+        .select("id, clock_in, clock_out, concept, notes")
+        .eq("employee_profile_id", profileRow.id)
+        .not("created_by", "is", null)
+        .order("clock_in", { ascending: false })
+        .limit(50);
+
+      manualDays = manualRows ?? [];
     }
   }
 
@@ -206,6 +230,15 @@ export default async function MemberDetailPage({
                 >
                   <Receipt className="h-4 w-4" aria-hidden />
                   Liquidar pago
+                </Link>
+              )}
+              {profile && (
+                <Link
+                  href={`/app/groups/${id}/members/${memberId}/days/new`}
+                  className="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-muted"
+                >
+                  <CalendarPlus className="h-4 w-4" aria-hidden />
+                  Agregar día
                 </Link>
               )}
               <Link
@@ -311,6 +344,60 @@ export default async function MemberDetailPage({
                       </span>
                     </li>
                   ))}
+                </ul>
+              )}
+            </CardBody>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CalendarPlus
+                  className="h-4 w-4 text-muted-foreground"
+                  aria-hidden
+                />
+                Días cargados a mano ({manualDays.length})
+              </CardTitle>
+            </CardHeader>
+            <CardBody className="pt-0">
+              {manualDays.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Todavía no cargaste feriados ni vacaciones para este empleado.
+                </p>
+              ) : (
+                <ul className="divide-y divide-border">
+                  {manualDays.map((d) => {
+                    const day = new Date(d.clock_in);
+                    const minutes = d.clock_out
+                      ? new Date(d.clock_out).getTime() - day.getTime()
+                      : 0;
+                    const dayText = formatShortDate(day);
+                    return (
+                      <li
+                        key={d.id}
+                        className="flex items-start justify-between gap-3 py-3 first:pt-0 last:pb-0"
+                      >
+                        <div className="min-w-0">
+                          <p className="flex flex-wrap items-center gap-2 text-sm font-medium">
+                            <span className="tabular-nums">{dayText}</span>
+                            <Badge variant="muted">
+                              {conceptShortLabel(d.concept)}
+                            </Badge>
+                          </p>
+                          <p className="mt-0.5 text-xs text-muted-foreground tabular-nums">
+                            {formatDuration(minutes)}
+                            {d.notes ? ` · ${d.notes}` : ""}
+                          </p>
+                        </div>
+                        <DeleteDayButton
+                          groupId={id}
+                          memberId={memberId}
+                          entryId={d.id}
+                          dayLabel={`${conceptShortLabel(d.concept).toLowerCase()} del ${dayText}`}
+                        />
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </CardBody>
