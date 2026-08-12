@@ -441,6 +441,13 @@ Steps for the first deploy:
    - `VAPID_PUBLIC_KEY`
    - `VAPID_PRIVATE_KEY`
    - `NEXT_PUBLIC_VAPID_PUBLIC_KEY`
+   - `NEXT_PUBLIC_SITE_URL` — the canonical origin, no trailing slash.
+     Vercel serves the same deployment on several hostnames (clean alias,
+     team alias, git-branch alias, one per deployment). Without this,
+     `getOrigin()` returns whichever the visitor arrived on: OAuth then
+     breaks for everyone off the canonical host (Supabase only honours a
+     `redirectTo` matching its allowlist exactly, and silently falls back
+     to the Site URL), and invite links point at that alias.
 6. **Deploy**. You get `your-project.vercel.app`.
 7. **Update Supabase** → Auth → URL Configuration:
    - Site URL: `https://your-project.vercel.app`
