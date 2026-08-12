@@ -33,11 +33,30 @@
 -- 1) Let audit rows outlive the shift they describe
 -- ----------------------------------------------------------------------------
 
+-- Written to be safe to re-run: this file is applied by hand, and a partial
+-- application (everything before the failing statement committed, nothing
+-- after) is otherwise indistinguishable from never having run it.
+
 alter table shift_edits
   alter column shift_id drop not null;
 
-alter table shift_edits
-  drop constraint shift_edits_shift_id_fkey;
+-- Drop whatever the FK to time_entries is actually called rather than assuming
+-- the auto-generated name. Guessing wrong aborts the file here, which leaves
+-- both functions below undefined while the column change looks applied.
+do $$
+declare
+  fk_name text;
+begin
+  select conname into fk_name
+    from pg_constraint
+   where conrelid = 'shift_edits'::regclass
+     and contype = 'f'
+     and confrelid = 'time_entries'::regclass;
+
+  if fk_name is not null then
+    execute format('alter table shift_edits drop constraint %I', fk_name);
+  end if;
+end $$;
 
 alter table shift_edits
   add constraint shift_edits_shift_id_fkey

@@ -103,6 +103,18 @@ const CONTAINS: [string, string][] = [
   ["rate limit", "Probaste demasiadas veces. Esperá unos minutos."],
   ["Failed to fetch", "No pudimos conectarnos. Revisá tu internet."],
   ["fetch failed", "No pudimos conectarnos. Revisá tu internet."],
+  // PostgREST when an RPC does not exist (PGRST202). Migrations here are
+  // applied by hand, so "the function is missing" is a routine state, and
+  // "probá de nuevo" sends you to retry something that can never work. Say
+  // what it actually is instead — the person reading this owns the database.
+  [
+    "in the schema cache",
+    "Falta aplicar una migración en Supabase: esta acción usa una función que todavía no existe en la base. Corré el último archivo de supabase/migrations y reintentá.",
+  ],
+  [
+    "Could not find the function",
+    "Falta aplicar una migración en Supabase: esta acción usa una función que todavía no existe en la base. Corré el último archivo de supabase/migrations y reintentá.",
+  ],
 ];
 
 /**
