@@ -33,38 +33,42 @@ type OpenShiftRow = {
 export default async function AppHomePage() {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Two round trips instead of four: the sweep needs nothing, so it rides
+  // along with the auth call, and the two reads below only need `user`.
+  const [
+    {
+      data: { user },
+    },
+  ] = await Promise.all([
+    supabase.auth.getUser(),
+    // Sweep stale shifts so a banner never shows for a shift that should have
+    // auto-closed by now. Must land before the open-shift read below.
+    supabase.rpc("auto_close_expired_shifts"),
+  ]);
 
-  // Sweep stale shifts so a banner never shows for a shift that should have
-  // auto-closed by now.
-  await supabase.rpc("auto_close_expired_shifts");
-
-  const { data: memberships, error } = await supabase
-    .from("group_members")
-    .select(
-      "role, joined_at, group:groups(id, name, avatar_url, created_at)",
-    )
-    .eq("user_id", user!.id)
-    .eq("status", "active")
-    .order("joined_at", { ascending: false });
-
-  // Open shifts across every group the user belongs to. Drives the
-  // global "Trabajando en X" banner above the groups list.
-  const { data: rawOpen } = await supabase
-    .from("time_entries")
-    .select(
-      `id, clock_in,
-       employee_profile:employee_profiles!inner(
-         group_member:group_members!inner(
-           group_id, user_id,
-           group:groups(id, name, avatar_url)
-         )
-       )`,
-    )
-    .eq("status", "open")
-    .eq("employee_profile.group_member.user_id", user!.id);
+  const [{ data: memberships, error }, { data: rawOpen }] = await Promise.all([
+    supabase
+      .from("group_members")
+      .select("role, joined_at, group:groups(id, name, avatar_url, created_at)")
+      .eq("user_id", user!.id)
+      .eq("status", "active")
+      .order("joined_at", { ascending: false }),
+    // Open shifts across every group the user belongs to. Drives the
+    // global "Trabajando en X" banner above the groups list.
+    supabase
+      .from("time_entries")
+      .select(
+        `id, clock_in,
+         employee_profile:employee_profiles!inner(
+           group_member:group_members!inner(
+             group_id, user_id,
+             group:groups(id, name, avatar_url)
+           )
+         )`,
+      )
+      .eq("status", "open")
+      .eq("employee_profile.group_member.user_id", user!.id),
+  ]);
 
   const openShifts: OpenShiftSummary[] = ((rawOpen ?? []) as unknown as OpenShiftRow[])
     .map((row) => {

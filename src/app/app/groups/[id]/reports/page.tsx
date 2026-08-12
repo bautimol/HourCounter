@@ -52,17 +52,18 @@ export default async function ReportsPage({
 
   const supabase = await createClient();
 
-  const { data: group } = await supabase
-    .from("groups")
-    .select("id, name")
-    .eq("id", id)
-    .maybeSingle();
+  // The group lookup and the auth call need nothing from each other.
+  const [
+    { data: group },
+    {
+      data: { user },
+    },
+  ] = await Promise.all([
+    supabase.from("groups").select("id, name").eq("id", id).maybeSingle(),
+    supabase.auth.getUser(),
+  ]);
 
   if (!group) notFound();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
   const { data: myMembership } = await supabase
     .from("group_members")

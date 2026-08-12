@@ -46,45 +46,59 @@ export default async function MemberDetailPage({
   const { id, memberId } = await params;
   const supabase = await createClient();
 
-  const { data: group } = await supabase
-    .from("groups")
-    .select("id, name")
-    .eq("id", id)
-    .maybeSingle();
+  // Grouped into dependency waves so this screen costs 3 round trips instead
+  // of one per query. Wave 1 is everything derivable from the URL alone.
+  const [
+    { data: group },
+    {
+      data: { user },
+    },
+    { data: member },
+    { data: profileRow },
+  ] = await Promise.all([
+    supabase.from("groups").select("id, name").eq("id", id).maybeSingle(),
+    supabase.auth.getUser(),
+    supabase
+      .from("group_members")
+      .select("id, role, status, display_name, avatar_url, joined_at")
+      .eq("id", memberId)
+      .eq("group_id", id)
+      .maybeSingle(),
+    // Fetched before we know the role: employers simply have no profile row,
+    // so this returns null for them rather than costing an extra wave for
+    // every employee page.
+    supabase
+      .from("employee_profiles")
+      .select("id, position_id, position:positions(name)")
+      .eq("group_member_id", memberId)
+      .maybeSingle(),
+  ]);
 
   if (!group) notFound();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const { data: myMembership } = await supabase
-    .from("group_members")
-    .select("role")
-    .eq("group_id", id)
-    .eq("user_id", user!.id)
-    .maybeSingle();
+  // Wave 2 — both need the authenticated user from wave 1.
+  const [{ data: myMembership }, { data: nicknameRow }] = await Promise.all([
+    supabase
+      .from("group_members")
+      .select("role")
+      .eq("group_id", id)
+      .eq("user_id", user!.id)
+      .maybeSingle(),
+    // Per-viewer nickname (only this employer sees it).
+    supabase
+      .from("member_nicknames")
+      .select("nickname")
+      .eq("viewer_user_id", user!.id)
+      .eq("target_member_id", memberId)
+      .maybeSingle(),
+  ]);
 
   if (!myMembership || myMembership.role !== "employer") {
     redirect(`/app/groups/${id}`);
   }
 
-  const { data: member } = await supabase
-    .from("group_members")
-    .select("id, role, status, display_name, avatar_url, joined_at")
-    .eq("id", memberId)
-    .eq("group_id", id)
-    .maybeSingle();
-
   if (!member) notFound();
 
-  // Per-viewer nickname (only this employer sees it).
-  const { data: nicknameRow } = await supabase
-    .from("member_nicknames")
-    .select("nickname")
-    .eq("viewer_user_id", user!.id)
-    .eq("target_member_id", memberId)
-    .maybeSingle();
   const nickname = nicknameRow?.nickname ?? null;
   const titleName = nickname ?? member.display_name ?? "Empleado";
 
@@ -110,58 +124,48 @@ export default async function MemberDetailPage({
     notes: string | null;
   }[] = [];
 
-  if (member.role === "employee") {
-    const { data: profileRow } = await supabase
-      .from("employee_profiles")
-      .select("id, position_id, position:positions(name)")
-      .eq("group_member_id", memberId)
-      .maybeSingle();
+  if (member.role === "employee" && profileRow) {
+    const positionName = Array.isArray(profileRow.position)
+      ? (profileRow.position[0]?.name ?? null)
+      : ((profileRow.position as { name: string } | null)?.name ?? null);
 
-    if (profileRow) {
-      const positionName = Array.isArray(profileRow.position)
-        ? (profileRow.position[0]?.name ?? null)
-        : ((profileRow.position as { name: string } | null)?.name ?? null);
+    profile = {
+      id: profileRow.id,
+      position_id: profileRow.position_id,
+      position_name: positionName,
+    };
 
-      profile = {
-        id: profileRow.id,
-        position_id: profileRow.position_id,
-        position_name: positionName,
-      };
+    // Wave 3 — the four reads that all hang off the profile id, in one hop.
+    const [{ data: eff }, { data: fas }, { data: notesRow }, { data: manualRows }] =
+      await Promise.all([
+        supabase
+          .rpc("effective_employee_profile", { profile_id: profileRow.id })
+          .single(),
+        supabase
+          .from("fixed_amounts")
+          .select("id, description, amount, frequency, custom_days")
+          .eq("employee_profile_id", profileRow.id)
+          .order("created_at", { ascending: true }),
+        supabase
+          .from("employee_notes")
+          .select("notes")
+          .eq("employee_profile_id", profileRow.id)
+          .maybeSingle(),
+        // Days the employer typed in (holidays, vacation, forgotten shifts).
+        // `created_by is not null` is what marks a row as manual.
+        supabase
+          .from("time_entries")
+          .select("id, clock_in, clock_out, concept, notes")
+          .eq("employee_profile_id", profileRow.id)
+          .not("created_by", "is", null)
+          .order("clock_in", { ascending: false })
+          .limit(50),
+      ]);
 
-      const { data: eff } = await supabase
-        .rpc("effective_employee_profile", { profile_id: profileRow.id })
-        .single();
-
-      effective = (eff as EffectiveProfile | null) ?? null;
-
-      const { data: fas } = await supabase
-        .from("fixed_amounts")
-        .select("id, description, amount, frequency, custom_days")
-        .eq("employee_profile_id", profileRow.id)
-        .order("created_at", { ascending: true });
-
-      fixedAmounts = fas ?? [];
-
-      const { data: notesRow } = await supabase
-        .from("employee_notes")
-        .select("notes")
-        .eq("employee_profile_id", profileRow.id)
-        .maybeSingle();
-
-      notes = notesRow?.notes ?? null;
-
-      // Days the employer typed in (holidays, vacation, forgotten shifts).
-      // `created_by is not null` is what marks a row as manual.
-      const { data: manualRows } = await supabase
-        .from("time_entries")
-        .select("id, clock_in, clock_out, concept, notes")
-        .eq("employee_profile_id", profileRow.id)
-        .not("created_by", "is", null)
-        .order("clock_in", { ascending: false })
-        .limit(50);
-
-      manualDays = manualRows ?? [];
-    }
+    effective = (eff as EffectiveProfile | null) ?? null;
+    fixedAmounts = fas ?? [];
+    notes = notesRow?.notes ?? null;
+    manualDays = manualRows ?? [];
   }
 
   return (

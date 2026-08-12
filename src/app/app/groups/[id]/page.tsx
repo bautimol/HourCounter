@@ -30,11 +30,38 @@ export default async function GroupDetailPage({
 
   const supabase = await createClient();
 
-  const { data: group, error: groupError } = await supabase
-    .from("groups")
-    .select("id, name, avatar_url, created_at, geofence_enabled")
-    .eq("id", id)
-    .maybeSingle();
+  // Reads are grouped into waves by their real dependencies. Each wave is one
+  // network round trip to Supabase instead of one per query — on this screen
+  // that is 3 hops instead of 8. Anything inside a wave is independent; the
+  // only reason to start a new wave is that it needs the previous wave's data.
+
+  // Wave 1 — depends on nothing but the URL.
+  const [
+    { data: group, error: groupError },
+    {
+      data: { user },
+    },
+    { data: members },
+  ] = await Promise.all([
+    supabase
+      .from("groups")
+      .select("id, name, avatar_url, created_at, geofence_enabled")
+      .eq("id", id)
+      .maybeSingle(),
+    supabase.auth.getUser(),
+    supabase
+      .from("group_members")
+      .select(
+        `id, role, display_name, avatar_url, joined_at, user_id,
+         employee_profile:employee_profiles(
+           id,
+           position:positions(name)
+         )`,
+      )
+      .eq("group_id", id)
+      .eq("status", "active")
+      .order("joined_at", { ascending: true }),
+  ]);
 
   if (groupError) {
     return (
@@ -48,47 +75,9 @@ export default async function GroupDetailPage({
     notFound();
   }
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const { data: myMembership } = await supabase
-    .from("group_members")
-    .select("id, role")
-    .eq("group_id", id)
-    .eq("user_id", user!.id)
-    .maybeSingle();
-
-  const { data: members } = await supabase
-    .from("group_members")
-    .select(
-      `id, role, display_name, avatar_url, joined_at, user_id,
-       employee_profile:employee_profiles(
-         id,
-         position:positions(name)
-       )`,
-    )
-    .eq("group_id", id)
-    .eq("status", "active")
-    .order("joined_at", { ascending: true });
-
-  // Per-viewer nicknames: load only mine for the members of this group.
   const memberIds = (members ?? []).map((m) => m.id);
-  const { data: nicknameRows } =
-    memberIds.length > 0
-      ? await supabase
-          .from("member_nicknames")
-          .select("target_member_id, nickname")
-          .eq("viewer_user_id", user!.id)
-          .in("target_member_id", memberIds)
-      : { data: [] };
 
-  const nicknameByMember = new Map<string, string>();
-  for (const row of nicknameRows ?? []) {
-    nicknameByMember.set(row.target_member_id, row.nickname);
-  }
-
-  // Pull each member's profile + open shift so the row can show "trabajando".
+  // Each member's profile id, so the row can show "trabajando".
   const profileIds: string[] = [];
   const profileToMember = new Map<string, string>();
   for (const m of members ?? []) {
@@ -101,14 +90,40 @@ export default async function GroupDetailPage({
     }
   }
 
-  const { data: openShifts } =
-    profileIds.length > 0
-      ? await supabase
-          .from("time_entries")
-          .select("employee_profile_id, clock_in")
-          .eq("status", "open")
-          .in("employee_profile_id", profileIds)
-      : { data: [] };
+  // Wave 2 — needs `user` and/or the member list from wave 1.
+  const [{ data: myMembership }, { data: nicknameRows }, { data: openShifts }] =
+    await Promise.all([
+      supabase
+        .from("group_members")
+        .select("id, role")
+        .eq("group_id", id)
+        .eq("user_id", user!.id)
+        .maybeSingle(),
+      // Per-viewer nicknames: load only mine for the members of this group.
+      memberIds.length > 0
+        ? supabase
+            .from("member_nicknames")
+            .select("target_member_id, nickname")
+            .eq("viewer_user_id", user!.id)
+            .in("target_member_id", memberIds)
+        : Promise.resolve({
+            data: [] as { target_member_id: string; nickname: string }[],
+          }),
+      profileIds.length > 0
+        ? supabase
+            .from("time_entries")
+            .select("employee_profile_id, clock_in")
+            .eq("status", "open")
+            .in("employee_profile_id", profileIds)
+        : Promise.resolve({
+            data: [] as { employee_profile_id: string; clock_in: string }[],
+          }),
+    ]);
+
+  const nicknameByMember = new Map<string, string>();
+  for (const row of nicknameRows ?? []) {
+    nicknameByMember.set(row.target_member_id, row.nickname);
+  }
 
   const openByMember = new Map<string, { clockIn: Date }>();
   for (const s of openShifts ?? []) {
@@ -123,27 +138,30 @@ export default async function GroupDetailPage({
   const memberCount = members?.length ?? 0;
   const workingNow = openByMember.size;
 
-  // Position count for the employer stats strip.
-  const { count: positionsCount } = isEmployer
-    ? await supabase
-        .from("positions")
-        .select("id", { count: "exact", head: true })
-        .eq("group_id", id)
-    : { count: 0 };
-
-  // Pending shifts (closed, not verified) — drives the verify-shifts CTA.
-  const { count: pendingShiftsCount } = isEmployer
-    ? await supabase
-        .from("time_entries")
-        .select(
-          "id, employee_profile:employee_profiles!inner(group_member:group_members!inner(group_id, status))",
-          { count: "exact", head: true },
-        )
-        .eq("employee_profile.group_member.group_id", id)
-        .eq("employee_profile.group_member.status", "active")
-        .eq("status", "closed")
-        .is("verified_at", null)
-    : { count: 0 };
+  // Wave 3 — the two employer counters, which need the role from wave 2.
+  const [{ count: positionsCount }, { count: pendingShiftsCount }] =
+    await Promise.all([
+      // Position count for the employer stats strip.
+      isEmployer
+        ? supabase
+            .from("positions")
+            .select("id", { count: "exact", head: true })
+            .eq("group_id", id)
+        : Promise.resolve({ count: 0 }),
+      // Pending shifts (closed, not verified) — drives the verify-shifts CTA.
+      isEmployer
+        ? supabase
+            .from("time_entries")
+            .select(
+              "id, employee_profile:employee_profiles!inner(group_member:group_members!inner(group_id, status))",
+              { count: "exact", head: true },
+            )
+            .eq("employee_profile.group_member.group_id", id)
+            .eq("employee_profile.group_member.status", "active")
+            .eq("status", "closed")
+            .is("verified_at", null)
+        : Promise.resolve({ count: 0 }),
+    ]);
 
   // Employee-only: fetch clock state + today's totals + recent shifts.
   let openShift: OpenShift | null = null;
@@ -151,14 +169,17 @@ export default async function GroupDetailPage({
   let closedTodayMinutes = 0;
 
   if (isEmployee && myMembership) {
-    // Sweep any expired shifts so subsequent reads are accurate.
-    await supabase.rpc("auto_close_expired_shifts");
-
-    const { data: profile } = await supabase
-      .from("employee_profiles")
-      .select("id")
-      .eq("group_member_id", myMembership.id)
-      .maybeSingle();
+    // The sweep closes expired shifts so the reads below are accurate. It
+    // touches time_entries only, so looking up the profile id can ride along
+    // in the same round trip rather than waiting for it.
+    const [, { data: profile }] = await Promise.all([
+      supabase.rpc("auto_close_expired_shifts"),
+      supabase
+        .from("employee_profiles")
+        .select("id")
+        .eq("group_member_id", myMembership.id)
+        .maybeSingle(),
+    ]);
 
     if (profile) {
       const [{ data: open }, { data: recent }, { data: todayEntries }] =

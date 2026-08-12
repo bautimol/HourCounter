@@ -155,6 +155,33 @@ read policy (which lets every member see profile scalars).
     The live version merges both (per-shift `coalesce(snapshot, live)`
     pricing **and** `count(distinct ar_day) filter (where concept =
     'worked')`). If that function is ever recreated again, keep both.
+15. **Latency is round trips × distance, so both are managed.** Users are
+    in Argentina and Supabase is in `sa-east-1` (São Paulo), but Vercel
+    functions defaulted to `iad1` (Washington DC) — every query went
+    BA → Virginia → São Paulo and back, measured at **~150 ms per
+    round trip**. `vercel.json` pins `regions: ["gru1"]` so functions
+    sit next to the database; do not remove it. On top of that, page
+    reads are grouped into **dependency waves**: everything derivable
+    from the URL fires in one `Promise.all`, then what needs the user,
+    then what needs the first results. Group detail went 8 serial hops
+    → 3, member detail 10 → 3, `/app` 4 → 2. When adding a query, put
+    it in the earliest wave whose inputs it already has rather than
+    appending another `await`.
+16. **Every authenticated route has a loading boundary.**
+    `src/app/app/loading.tsx` covers the area generically and
+    `groups/[id]/loading.tsx` mirrors that screen specifically. This is
+    not cosmetic: without a `loading.tsx` a dynamic route shows the
+    *previous* screen unchanged until the server responds (users read
+    that as a dead tap and re-tap), and Next.js will not prefetch a
+    dynamic route that has no loading boundary. Adding a route means
+    adding or inheriting one.
+17. **Work that the user is not waiting for goes in `after()`.**
+    `clockOutAction` used to await the employer push fan-out — three
+    lookups plus an HTTPS call per employer device — before returning,
+    so the employee watched a spinner while other people's phones were
+    notified. It now runs inside `after()` from `next/server`, which
+    fires once the response is sent. Server Functions may use request
+    APIs inside `after`, so the Supabase client keeps working there.
 
 ## Repository layout
 

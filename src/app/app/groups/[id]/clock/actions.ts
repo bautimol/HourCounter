@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { sendPushToUsers } from "@/lib/push";
 import { friendlyError } from "@/lib/errors";
@@ -140,47 +141,54 @@ export async function clockOutAction(
   revalidatePath("/app");
 
   // Notify the group's employers that there's a fresh shift to verify.
-  // Best-effort: never block the response on push delivery; never bubble
-  // failures back to the user.
-  try {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+  //
+  // This block used to be awaited inline despite the comment saying it was
+  // fire-and-forget: the employee stood there watching a spinner while we
+  // looked up three rows and pushed to every employer's phone (each one an
+  // HTTPS call to FCM/APNs). `after` runs it once the response is already on
+  // its way, so the shift closes as fast as the RPC returns. Server Functions
+  // may use request APIs inside `after`, so the Supabase client still works.
+  after(async () => {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-    const [{ data: group }, { data: myMembership }, { data: employers }] =
-      await Promise.all([
-        supabase.from("groups").select("name").eq("id", groupId).maybeSingle(),
-        supabase
-          .from("group_members")
-          .select("display_name")
-          .eq("group_id", groupId)
-          .eq("user_id", user!.id)
-          .maybeSingle(),
-        supabase
-          .from("group_members")
-          .select("user_id")
-          .eq("group_id", groupId)
-          .eq("role", "employer")
-          .eq("status", "active"),
-      ]);
+      const [{ data: group }, { data: myMembership }, { data: employers }] =
+        await Promise.all([
+          supabase.from("groups").select("name").eq("id", groupId).maybeSingle(),
+          supabase
+            .from("group_members")
+            .select("display_name")
+            .eq("group_id", groupId)
+            .eq("user_id", user!.id)
+            .maybeSingle(),
+          supabase
+            .from("group_members")
+            .select("user_id")
+            .eq("group_id", groupId)
+            .eq("role", "employer")
+            .eq("status", "active"),
+        ]);
 
-    const employeeName = myMembership?.display_name ?? "Un empleado";
-    const groupName = group?.name ?? "el grupo";
-    const targets = (employers ?? [])
-      .map((e) => e.user_id)
-      .filter((id): id is string => Boolean(id) && id !== user?.id);
+      const employeeName = myMembership?.display_name ?? "Un empleado";
+      const groupName = group?.name ?? "el grupo";
+      const targets = (employers ?? [])
+        .map((e) => e.user_id)
+        .filter((id): id is string => Boolean(id) && id !== user?.id);
 
-    if (targets.length > 0) {
-      await sendPushToUsers(targets, {
-        title: groupName,
-        body: `${employeeName} cerró un turno`,
-        url: `/app/groups/${groupId}/shifts`,
-        tag: `shift-closed-${groupId}`,
-      });
+      if (targets.length > 0) {
+        await sendPushToUsers(targets, {
+          title: groupName,
+          body: `${employeeName} cerró un turno`,
+          url: `/app/groups/${groupId}/shifts`,
+          tag: `shift-closed-${groupId}`,
+        });
+      }
+    } catch {
+      // Swallow — push is best-effort and must never surface to the employee.
     }
-  } catch {
-    // Swallow — push is fire-and-forget.
-  }
+  });
 
   return { error: null, closed };
 }
