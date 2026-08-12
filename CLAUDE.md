@@ -293,6 +293,7 @@ HourCounter/
 | Feature                                     | Status         |
 |---------------------------------------------|----------------|
 | Email/password signup + login               | ✅ done        |
+| Google sign-in (OAuth, PKCE via /auth/callback) | ✅ done    |
 | Email confirmation flow                     | ✅ done        |
 | Signout                                     | ✅ done        |
 | Create / list groups                        | ✅ done        |
@@ -389,8 +390,28 @@ npm run dev                            # http://localhost:3000
 Supabase config required:
 - Auth → URL Configuration:
   - Site URL: `http://localhost:3000`
-  - Redirect URLs: `http://localhost:3000/auth/confirm`
+  - Redirect URLs: `http://localhost:3000/auth/confirm` and
+    `http://localhost:3000/auth/callback`
 - (Optional for dev) Auth → Providers → Email: disable "Confirm email".
+
+For Google sign-in (dashboard-only, no migration):
+1. Google Cloud Console → APIs & Services → Credentials → **OAuth client
+   ID** (type: Web application).
+   - Authorized JavaScript origins: the site origin
+     (`http://localhost:3000`, and the prod domain).
+   - Authorized redirect URI: **`https://<project-ref>.supabase.co/auth/v1/callback`**
+     — Google redirects to *Supabase*, not to this app. The app's own
+     `/auth/callback` is where Supabase then sends the user, so it goes
+     in Supabase's Redirect URLs (above), not here. Mixing these two up
+     is the usual cause of `redirect_uri_mismatch`.
+2. Supabase → Auth → Providers → Google: enable, paste the client ID and
+   secret.
+3. Consent screen: while it is in "Testing" only accounts added as test
+   users can sign in; publish it before real users try.
+
+No schema work was needed: Supabase's Google provider writes `full_name`
+into `raw_user_meta_data`, which is exactly what `handle_new_user` (0003)
+and `accept_invitation` already read for `group_members.display_name`.
 
 For push notifications:
 - Generate VAPID keys: `npx web-push generate-vapid-keys`
@@ -424,7 +445,10 @@ Steps for the first deploy:
 7. **Update Supabase** → Auth → URL Configuration:
    - Site URL: `https://your-project.vercel.app`
    - Redirect URLs: add `https://your-project.vercel.app/auth/confirm`
+     and `https://your-project.vercel.app/auth/callback`
    (Keep the localhost ones too for dev.)
+   Also add the prod origin to the Google OAuth client's authorized
+   JavaScript origins, or Google sign-in works locally but not in prod.
 8. Open the URL on an Android phone, sign up, look for the
    "Instalá HourCounter" banner on `/app`. Tap install. Now it lives
    on the home screen.

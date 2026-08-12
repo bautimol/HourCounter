@@ -1,18 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
-
-/**
- * Only allow same-site relative redirects. Without this, `?next=https://evil.com`
- * or `?next=//evil.com` would be an open redirect off the back of a valid
- * confirmation link. Mirrors safeNext() in the (auth) actions.
- */
-function safeNext(next: string | null): string {
-  if (!next) return "/app";
-  if (!next.startsWith("/")) return "/app";
-  if (next.startsWith("//")) return "/app";
-  return next;
-}
+import { safeNext } from "@/lib/safe-next";
 
 /**
  * Handles email confirmation links sent by Supabase Auth.

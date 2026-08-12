@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { signupAction, type SignupState } from "./actions";
 import { SubmitButton } from "@/components/submit-button";
+import { AuthDivider, GoogleButton } from "../google-button";
 import {
   ErrorMessage,
   Field,
@@ -27,47 +28,54 @@ export function SignupForm({ next }: { next?: string }) {
   }
 
   return (
-    <form action={formAction} className="space-y-4">
-      {next && <input type="hidden" name="next" value={next} />}
+    <div className="space-y-4">
+      {/* Outside the email form on purpose: GoogleButton renders its own
+          <form>, and nested forms are invalid HTML. */}
+      <GoogleButton next={next} label="Registrarme con Google" />
+      <AuthDivider />
 
-      <Field>
-        <Label htmlFor="full_name">Nombre completo</Label>
-        <Input
-          id="full_name"
-          name="full_name"
-          type="text"
-          autoComplete="name"
-          required
-        />
-      </Field>
+      <form action={formAction} className="space-y-4">
+        {next && <input type="hidden" name="next" value={next} />}
 
-      <Field>
-        <Label htmlFor="email">Email</Label>
-        <Input
-          id="email"
-          name="email"
-          type="email"
-          autoComplete="email"
-          required
-        />
-      </Field>
+        <Field>
+          <Label htmlFor="full_name">Nombre completo</Label>
+          <Input
+            id="full_name"
+            name="full_name"
+            type="text"
+            autoComplete="name"
+            required
+          />
+        </Field>
 
-      <Field>
-        <Label htmlFor="password">Contraseña</Label>
-        <Input
-          id="password"
-          name="password"
-          type="password"
-          autoComplete="new-password"
-          required
-          minLength={8}
-        />
-        <Hint>Mínimo 8 caracteres</Hint>
-      </Field>
+        <Field>
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            required
+          />
+        </Field>
 
-      {state.error && <ErrorMessage>{state.error}</ErrorMessage>}
+        <Field>
+          <Label htmlFor="password">Contraseña</Label>
+          <Input
+            id="password"
+            name="password"
+            type="password"
+            autoComplete="new-password"
+            required
+            minLength={8}
+          />
+          <Hint>Mínimo 8 caracteres</Hint>
+        </Field>
 
-      <SubmitButton>Crear cuenta</SubmitButton>
-    </form>
+        {state.error && <ErrorMessage>{state.error}</ErrorMessage>}
+
+        <SubmitButton>Crear cuenta</SubmitButton>
+      </form>
+    </div>
   );
 }

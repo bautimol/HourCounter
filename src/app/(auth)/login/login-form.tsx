@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { loginAction, type AuthState } from "./actions";
 import { SubmitButton } from "@/components/submit-button";
+import { AuthDivider, GoogleButton } from "../google-button";
 import {
   ErrorMessage,
   Field,
@@ -16,34 +17,41 @@ export function LoginForm({ next }: { next?: string }) {
   const [state, formAction] = useActionState(loginAction, initialState);
 
   return (
-    <form action={formAction} className="space-y-4">
-      {next && <input type="hidden" name="next" value={next} />}
+    <div className="space-y-4">
+      {/* Outside the email form on purpose: GoogleButton renders its own
+          <form>, and nested forms are invalid HTML. */}
+      <GoogleButton next={next} label="Entrar con Google" />
+      <AuthDivider />
 
-      <Field>
-        <Label htmlFor="email">Email</Label>
-        <Input
-          id="email"
-          name="email"
-          type="email"
-          autoComplete="email"
-          required
-        />
-      </Field>
+      <form action={formAction} className="space-y-4">
+        {next && <input type="hidden" name="next" value={next} />}
 
-      <Field>
-        <Label htmlFor="password">Contraseña</Label>
-        <Input
-          id="password"
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          required
-        />
-      </Field>
+        <Field>
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            required
+          />
+        </Field>
 
-      {state.error && <ErrorMessage>{state.error}</ErrorMessage>}
+        <Field>
+          <Label htmlFor="password">Contraseña</Label>
+          <Input
+            id="password"
+            name="password"
+            type="password"
+            autoComplete="current-password"
+            required
+          />
+        </Field>
 
-      <SubmitButton>Entrar</SubmitButton>
-    </form>
+        {state.error && <ErrorMessage>{state.error}</ErrorMessage>}
+
+        <SubmitButton>Entrar</SubmitButton>
+      </form>
+    </div>
   );
 }

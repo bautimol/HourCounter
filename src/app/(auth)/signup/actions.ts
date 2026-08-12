@@ -4,18 +4,12 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getOrigin } from "@/lib/origin";
 import { friendlyError } from "@/lib/errors";
+import { safeNext } from "@/lib/safe-next";
 
 export type SignupState = {
   error: string | null;
   message: string | null;
 };
-
-function safeNext(next: string | null): string {
-  if (!next) return "/app";
-  if (!next.startsWith("/")) return "/app";
-  if (next.startsWith("//")) return "/app";
-  return next;
-}
 
 export async function signupAction(
   _prevState: SignupState,
