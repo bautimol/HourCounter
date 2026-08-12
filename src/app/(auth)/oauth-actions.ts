@@ -1,8 +1,10 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getOrigin } from "@/lib/origin";
+import { OAUTH_NEXT_COOKIE } from "@/lib/safe-next";
 import { safeNext } from "@/lib/safe-next";
 
 /**
@@ -21,10 +23,24 @@ export async function signInWithGoogleAction(formData: FormData) {
   const supabase = await createClient();
   const origin = await getOrigin();
 
+  // Park the destination in a cookie instead of redirectTo's query string —
+  // see OAUTH_NEXT_COOKIE for why. SameSite=Lax is required, not incidental:
+  // the trip back from Google is a cross-site top-level navigation, which
+  // Strict would drop, losing the invite the user was in the middle of.
+  const cookieStore = await cookies();
+  cookieStore.set(OAUTH_NEXT_COOKIE, next, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: origin.startsWith("https://"),
+    path: "/",
+    maxAge: 60 * 10,
+  });
+
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
+      // Fixed URL, so a single exact allowlist entry covers every sign-in.
+      redirectTo: `${origin}/auth/callback`,
     },
   });
 

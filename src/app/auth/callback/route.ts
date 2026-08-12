@@ -1,7 +1,8 @@
+import { cookies } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getOrigin } from "@/lib/origin";
-import { safeNext } from "@/lib/safe-next";
+import { OAUTH_NEXT_COOKIE, safeNext } from "@/lib/safe-next";
 
 /**
  * OAuth landing point (Google today). The provider sends the user back here
@@ -15,7 +16,13 @@ import { safeNext } from "@/lib/safe-next";
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = safeNext(searchParams.get("next"));
+
+  // The destination was parked in a cookie when the flow started, because
+  // Supabase only honours a `redirectTo` that matches its allowlist exactly.
+  // Consume it either way so a stale one never hijacks a later sign-in.
+  const cookieStore = await cookies();
+  const next = safeNext(cookieStore.get(OAUTH_NEXT_COOKIE)?.value ?? null);
+  cookieStore.delete(OAUTH_NEXT_COOKIE);
 
   // Redirects are built off the public origin rather than request.url so they
   // land on the real host when running behind Vercel's proxy.
