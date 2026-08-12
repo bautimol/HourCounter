@@ -142,9 +142,11 @@ read policy (which lets every member see profile scalars).
     `holiday` / `vacation_employee` / `vacation_employer` / `other`, which
     only an employer can create — a holiday is paid although nobody shows
     up, so it can never be clocked. `created_by` is NULL for clocked rows
-    and set for typed ones; that flag is what makes a row deletable
-    (`employer_delete_entry` refuses anything clocked — real shifts get
-    corrected, never destroyed). Manual days are inserted already verified
+    and set for typed ones. That flag used to be what made a row
+    deletable — **superseded by 14b**, which lets clocked shifts be
+    deleted too and gates on "already paid" instead. `created_by` is
+    still what distinguishes a typed day from a clocked one everywhere
+    else. Manual days are inserted already verified
     (the employer typed them, there is nothing to approve) with times
     synthesized at 09:00 ART so AR-local day math lands right. In the pay
     draft they **pay their hours like any other entry but do NOT count
@@ -155,6 +157,20 @@ read policy (which lets every member see profile scalars).
     The live version merges both (per-shift `coalesce(snapshot, live)`
     pricing **and** `count(distinct ar_day) filter (where concept =
     'worked')`). If that function is ever recreated again, keep both.
+14b. **Shifts can be deleted, but never paid ones** (0027). 0026's rule
+    that a clocked shift is only ever corrected proved too strict: a
+    shift opened by mistake auto-closes and then sits in Pendientes
+    forever, since approving it pays for work nobody did. So
+    `employer_delete_entry` now accepts clocked shifts too, and
+    `employer_delete_entries(uuid[])` does batches. The rail that
+    replaced it: **a shift inside a recorded payment period cannot be
+    deleted** (`SHIFT_ALREADY_PAID`), because the comprobante the
+    employee was handed must stay reconcilable. `shift_edits.shift_id`
+    became nullable `on delete set null` — it used to cascade, which
+    erased the record of the one action that most deserves one; the
+    delete writes a `'deleted'` row with a text snapshot first. Those
+    rows are orphaned by design and nothing renders them; they exist
+    so a dispute has an answer.
 15. **Latency is round trips × distance, so both are managed.** Users are
     in Argentina and Supabase is in `sa-east-1` (São Paulo), but Vercel
     functions defaulted to `iad1` (Washington DC) — every query went
@@ -281,7 +297,8 @@ HourCounter/
 │       ├── 0023_rpc_hardening.sql           RPC hardening: REVOKE sensitive fns, gate effective_employee_profile by membership
 │       ├── 0024_revoke_record_shift_edit_public.sql  completes 0023 (revoke record_shift_edit from PUBLIC)
 │       ├── 0025_retroactive_rates.sql       time_entries.hourly_rate snapshot (per-shift frozen rate) + change_employee_rate(profile,new_rate,effective_from) + calculate_pay_draft values hours per-shift with mixed_rates flag
-│       └── 0026_manual_entries.sql          time_entries.concept enum + created_by (NULL = clocked, set = employer typed it) + employer_create_entry / employer_delete_entry + calculate_pay_draft MERGED with 0025 (per-shift rates AND concept-aware day counting) + by_concept breakdown
+│       ├── 0026_manual_entries.sql          time_entries.concept enum + created_by (NULL = clocked, set = employer typed it) + employer_create_entry / employer_delete_entry + calculate_pay_draft MERGED with 0025 (per-shift rates AND concept-aware day counting) + by_concept breakdown
+│       └── 0027_delete_shifts.sql          lets employers delete clocked shifts (0026 only allowed manual ones), blocked for anything inside a recorded payment (SHIFT_ALREADY_PAID) + employer_delete_entries(uuid[]) for batches; shift_edits.shift_id now nullable on delete set null so the 'deleted' audit row survives
 ├── .env.local                      Supabase URL + anon key (gitignored)
 ├── .env.local.example              template
 ├── package.json
@@ -316,6 +333,7 @@ HourCounter/
 | "Trabajando" indicator on members list      | ✅ done        |
 | Global clock-out banner on /app             | ✅ done        |
 | Verification flow (employer reviews shifts) | ✅ done        |
+| Borrar turnos (individual + masivo, bloqueado si ya se pagó) | ✅ done |
 | Payment calculation + recording             | ✅ done        |
 | Payment adjustments (one-shot)              | ✅ done        |
 | PDF de liquidación (via window.print)       | ✅ done        |

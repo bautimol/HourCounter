@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useActionState, useState } from "react";
-import { Check, ChevronRight, MapPinOff, ShieldCheck } from "lucide-react";
+import { Check, ChevronRight, MapPinOff, ShieldCheck, Trash2 } from "lucide-react";
 import {
+  bulkDeleteShiftsAction,
   bulkVerifyShiftsAction,
   verifyShiftAction,
   type ShiftActionState,
@@ -61,6 +62,12 @@ export function ShiftBulkActions({
   const bulkAction = bulkVerifyShiftsAction.bind(null, groupId);
   const [bulkState, bulkFormAction] = useActionState(bulkAction, initialState);
 
+  const bulkDelete = bulkDeleteShiftsAction.bind(null, groupId);
+  const [deleteState, deleteFormAction] = useActionState(
+    bulkDelete,
+    initialState,
+  );
+
   function toggle(id: string) {
     setSelected((prev) => {
       const next = new Set(prev);
@@ -104,20 +111,44 @@ export function ShiftBulkActions({
           </button>
 
           {selected.size > 0 && (
-            <form action={bulkFormAction} className="flex items-center gap-2">
-              {Array.from(selected).map((id) => (
-                <input key={id} type="hidden" name="shift_id" value={id} />
-              ))}
-              <Button type="submit" size="sm">
-                <ShieldCheck className="h-4 w-4" aria-hidden />
-                Aprobar {selected.size}
-              </Button>
-            </form>
+            <div className="flex flex-wrap items-center gap-2">
+              <form action={bulkFormAction} className="flex items-center gap-2">
+                {Array.from(selected).map((id) => (
+                  <input key={id} type="hidden" name="shift_id" value={id} />
+                ))}
+                <Button type="submit" size="sm">
+                  <ShieldCheck className="h-4 w-4" aria-hidden />
+                  Aprobar {selected.size}
+                </Button>
+              </form>
+
+              <form
+                action={deleteFormAction}
+                onSubmit={(e) => {
+                  const ok = window.confirm(
+                    selected.size === 1
+                      ? "¿Borrar el turno seleccionado? No se puede deshacer."
+                      : `¿Borrar los ${selected.size} turnos seleccionados? No se puede deshacer.`,
+                  );
+                  if (!ok) e.preventDefault();
+                }}
+                className="flex items-center gap-2"
+              >
+                {Array.from(selected).map((id) => (
+                  <input key={id} type="hidden" name="shift_id" value={id} />
+                ))}
+                <Button type="submit" size="sm" variant="danger">
+                  <Trash2 className="h-4 w-4" aria-hidden />
+                  Borrar {selected.size}
+                </Button>
+              </form>
+            </div>
           )}
         </div>
       )}
 
       {bulkState.error && <ErrorMessage>{bulkState.error}</ErrorMessage>}
+      {deleteState.error && <ErrorMessage>{deleteState.error}</ErrorMessage>}
 
       <ul className="grid gap-2.5">
         {shifts.map((s) => {

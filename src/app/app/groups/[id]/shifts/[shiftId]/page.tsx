@@ -14,6 +14,7 @@ import {
 } from "@/lib/format";
 import { ShiftReviewForm } from "./shift-review-form";
 import { UnverifyShiftButton } from "./unverify-shift-button";
+import { DeleteShiftButton } from "./delete-shift-button";
 import { ShiftAuditLog, type AuditEntry } from "./audit-log";
 
 type Member = {
@@ -246,6 +247,19 @@ export default async function ShiftReviewPage({
           <UnverifyShiftButton groupId={id} shiftId={shiftId} />
         </div>
       )}
+
+      <Card className="border-danger/30">
+        <CardHeader>
+          <CardTitle className="text-danger">Borrar</CardTitle>
+        </CardHeader>
+        <CardBody className="pt-0">
+          <DeleteShiftButton
+            groupId={id}
+            shiftId={shiftId}
+            label={`el turno del ${formatShortDate(new Date(shift.clock_in))}`}
+          />
+        </CardBody>
+      </Card>
     </div>
   );
 }
