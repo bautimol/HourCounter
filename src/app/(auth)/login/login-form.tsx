@@ -18,11 +18,6 @@ export function LoginForm({ next }: { next?: string }) {
 
   return (
     <div className="space-y-4">
-      {/* Outside the email form on purpose: GoogleButton renders its own
-          <form>, and nested forms are invalid HTML. */}
-      <GoogleButton next={next} label="Entrar con Google" />
-      <AuthDivider />
-
       <form action={formAction} className="space-y-4">
         {next && <input type="hidden" name="next" value={next} />}
 
@@ -52,6 +47,11 @@ export function LoginForm({ next }: { next?: string }) {
 
         <SubmitButton>Entrar</SubmitButton>
       </form>
+
+      {/* Outside the email form on purpose: GoogleButton renders its own
+          <form>, and nested forms are invalid HTML. */}
+      <AuthDivider />
+      <GoogleButton next={next} label="Entrar con Google" />
     </div>
   );
 }
