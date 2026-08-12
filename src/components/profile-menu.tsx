@@ -83,9 +83,6 @@ export function ProfileMenu({
           <div className="my-1.5 border-t border-border" />
 
           <div className="px-2.5 pb-1 pt-0.5">
-            <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-              Tema
-            </p>
             <ThemeToggle />
           </div>
 

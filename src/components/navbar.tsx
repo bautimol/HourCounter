@@ -159,9 +159,6 @@ export function AppNavbar({
                 </Link>
               </li>
               <li className="mt-1 border-t border-border px-3 pt-3">
-                <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                  Tema
-                </p>
                 <ThemeToggle />
               </li>
               <li className="mt-1 border-t border-border pt-2">

@@ -49,34 +49,51 @@ export function ThemeToggle() {
     return () => mq.removeEventListener("change", onChange);
   }, [pref]);
 
+  const activeLabel =
+    OPTIONS.find((o) => o.value === pref)?.label ?? "Sistema";
+
   return (
-    <div
-      className="flex items-center gap-1 rounded-lg bg-surface-muted p-1"
-      role="group"
-      aria-label="Tema"
-    >
-      {OPTIONS.map((o) => {
-        const Icon = o.icon;
-        const active = pref === o.value;
-        return (
-          <button
-            key={o.value}
-            type="button"
-            onClick={() => applyPreference(o.value)}
-            aria-pressed={active}
-            title={o.label}
-            className={cn(
-              "inline-flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-md px-2 text-xs font-medium transition-colors",
-              active
-                ? "bg-surface text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            <Icon className="h-3.5 w-3.5" aria-hidden />
-            {o.label}
-          </button>
-        );
-      })}
+    <div className="space-y-1.5">
+      {/* Icon + label per option overflowed the 240px dropdown and clipped
+          "Sistema". The names live here instead, so the control itself only
+          has to fit three icons and cannot outgrow its container. */}
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+          Tema
+        </span>
+        <span className="text-[11px] text-muted-foreground">{activeLabel}</span>
+      </div>
+
+      <div
+        className="flex items-center gap-1 rounded-lg bg-surface-muted p-1"
+        role="group"
+        aria-label="Tema"
+      >
+        {OPTIONS.map((o) => {
+          const Icon = o.icon;
+          const active = pref === o.value;
+          return (
+            <button
+              key={o.value}
+              type="button"
+              onClick={() => applyPreference(o.value)}
+              aria-pressed={active}
+              // The visible name is in the header, so each button carries its
+              // own accessible name rather than relying on the icon.
+              aria-label={o.label}
+              title={o.label}
+              className={cn(
+                "inline-flex min-h-9 flex-1 items-center justify-center rounded-md transition-colors",
+                active
+                  ? "bg-surface text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <Icon className="h-4 w-4" aria-hidden />
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
