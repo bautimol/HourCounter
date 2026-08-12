@@ -1,6 +1,22 @@
 @import "tailwindcss";
 
 /* ----------------------------------------------------------------------------
+   Theming
+   ----------------------------------------------------------------------------
+   The theme is driven by `data-theme` on <html>, never by prefers-color-scheme
+   directly. An inline script in the root layout resolves the user's stored
+   choice — or the system preference when they haven't made one — and stamps
+   the attribute before first paint, so this is always "light" or "dark" and
+   never absent.
+
+   Doing it this way keeps one source of truth: the ~80 `dark:` utilities in
+   the components and the token block below both key off the same attribute,
+   so a manual override cannot leave them disagreeing (which is exactly what
+   happens if the tokens use an attribute while `dark:` still reads the OS).
+   ---------------------------------------------------------------------------- */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* ----------------------------------------------------------------------------
    Design tokens
    - Light: subtle warm off-white (stone-tinted) for less clinical feel.
    - Dark : near-black with high contrast surfaces, "Linear-grade" depth.
@@ -34,33 +50,37 @@
   --ring-color: 5 150 105;          /* emerald-600 in r g b */
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    /* Surfaces — Linear-style depth */
-    --background: #07070a;            /* deep near-black with a hint of blue */
-    --surface: #0f0f13;               /* card surface, slightly elevated */
-    --surface-muted: #17171c;         /* even more elevated */
-    --surface-elevated: #1c1c22;      /* hovered/active surface */
-    /* Lines */
-    --border: #25252c;
-    --border-strong: #3a3a44;
-    /* Text */
-    --foreground: #fafafa;
-    --muted-foreground: #9ca0a8;
-    /* Brand */
-    --accent: #10b981;                /* emerald-500 */
-    --accent-hover: #34d399;          /* emerald-400 on hover */
-    --accent-foreground: #042c1d;
-    --accent-soft: #064e3b;           /* emerald-900 */
-    --accent-soft-foreground: #6ee7b7;
-    /* Status */
-    --danger: #f87171;
-    --warning: #fbbf24;
-    /* Effects */
-    --shadow-color: 0 0% 0%;
-    --ring-color: 16 185 129;         /* emerald-500 in r g b */
-  }
+:root[data-theme="dark"] {
+  /* Surfaces — Linear-style depth */
+  --background: #07070a;            /* deep near-black with a hint of blue */
+  --surface: #0f0f13;               /* card surface, slightly elevated */
+  --surface-muted: #17171c;         /* even more elevated */
+  --surface-elevated: #1c1c22;      /* hovered/active surface */
+  /* Lines */
+  --border: #25252c;
+  --border-strong: #3a3a44;
+  /* Text */
+  --foreground: #fafafa;
+  --muted-foreground: #9ca0a8;
+  /* Brand */
+  --accent: #10b981;                /* emerald-500 */
+  --accent-hover: #34d399;          /* emerald-400 on hover */
+  --accent-foreground: #042c1d;
+  --accent-soft: #064e3b;           /* emerald-900 */
+  --accent-soft-foreground: #6ee7b7;
+  /* Status */
+  --danger: #f87171;
+  --warning: #fbbf24;
+  /* Effects */
+  --shadow-color: 0 0% 0%;
+  --ring-color: 16 185 129;         /* emerald-500 in r g b */
 }
+
+/* Native controls (scrollbars, date pickers, form widgets) follow the resolved
+   theme rather than the OS. Without this the date inputs in the reports picker
+   stay light while everything around them is dark. */
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"] { color-scheme: dark; }
 
 @theme inline {
   --color-background: var(--background);

@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { ServiceWorkerRegistrar } from "@/components/sw-register";
+import { THEME_INIT_SCRIPT } from "@/lib/theme";
 
 const plusJakarta = Plus_Jakarta_Sans({
   variable: "--font-jakarta",
@@ -45,7 +46,16 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${plusJakarta.variable} ${geistMono.variable} h-full antialiased`}
+      // The theme script sets data-theme before React hydrates, so the server
+      // HTML never carries the attribute and would otherwise mismatch.
+      suppressHydrationWarning
     >
+      <head>
+        {/* Before first paint: no flash of the wrong theme. */}
+        <script
+          dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }}
+        />
+      </head>
       <body
         className="min-h-full flex flex-col"
         suppressHydrationWarning

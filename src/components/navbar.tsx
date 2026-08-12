@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { Clock3, LogOut, Menu, X } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
+import { ProfileMenu } from "@/components/profile-menu";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/cn";
 
 export type NavLink = {
@@ -108,26 +110,7 @@ export function AppNavbar({
 
         {/* Right: user (desktop) */}
         <div className="hidden shrink-0 items-center gap-2 md:flex">
-          <Link
-            href="/app/me"
-            className="flex items-center gap-2 rounded-md px-1.5 py-1 transition-colors hover:bg-surface-muted"
-            title="Tu perfil"
-          >
-            <Avatar name={fullName} src={avatarUrl} size="sm" />
-            <span className="max-w-[160px] truncate text-sm text-foreground">
-              {fullName}
-            </span>
-          </Link>
-          <form action="/auth/signout" method="post">
-            <button
-              type="submit"
-              onClick={confirmSignout}
-              className="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-2.5 py-1.5 text-xs text-foreground transition-colors hover:bg-surface-muted"
-            >
-              <LogOut className="h-3.5 w-3.5" aria-hidden />
-              Salir
-            </button>
-          </form>
+          <ProfileMenu fullName={fullName} avatarUrl={avatarUrl} />
         </div>
 
         {/* Mobile toggle */}
@@ -174,6 +157,12 @@ export function AppNavbar({
                   <Avatar name={fullName} src={avatarUrl} size="sm" />
                   {fullName}
                 </Link>
+              </li>
+              <li className="mt-1 border-t border-border px-3 pt-3">
+                <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                  Tema
+                </p>
+                <ThemeToggle />
               </li>
               <li className="mt-1 border-t border-border pt-2">
                 <form action="/auth/signout" method="post">
