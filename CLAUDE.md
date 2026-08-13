@@ -478,9 +478,34 @@ Steps for the first deploy:
    "Instalá Clockity" banner on `/app`. Tap install. Now it lives
    on the home screen.
 
-For the real-domain step (`hourcounter.com.ar`), go to Vercel project
-→ Settings → Domains → Add. ~USD 25/year if you buy through nic.ar.
-Update Supabase URL Configuration again with the new domain.
+## Production
+
+Live on **https://clockity.app**. `www` 301s to the apex.
+
+Vercel serves the same deployment on four hostnames — `clockity.app` plus
+three `*.vercel.app` aliases — which is why `NEXT_PUBLIC_SITE_URL` must be
+set to `https://clockity.app` (no trailing slash). Without it `getOrigin()`
+returns whichever host the visitor arrived on, and OAuth breaks for anyone
+off the canonical one: Supabase only honours a `redirectTo` matching its
+allowlist exactly and silently falls back to the Site URL. Invite links and
+the email logo resolve through the same helper.
+
+Anything that hardcodes a host has to move together:
+
+| Where | Value |
+|-------|-------|
+| Vercel env | `NEXT_PUBLIC_SITE_URL=https://clockity.app` |
+| Supabase → URL Configuration | Site URL `https://clockity.app` |
+| Supabase → Redirect URLs | `https://clockity.app/auth/callback`, `.../auth/confirm` |
+| Google Cloud → OAuth client | Authorized JS origin `https://clockity.app` |
+
+The Google client's *redirect URI* stays pointed at Supabase
+(`https://<project-ref>.supabase.co/auth/v1/callback`) — that one never
+changes with the app's domain, and swapping it is the usual cause of
+`redirect_uri_mismatch`.
+
+Email templates reference `{{ .SiteURL }}` rather than a literal host, so
+they follow the Site URL setting on their own.
 
 After every push to `main`, Vercel auto-deploys.
 
@@ -566,7 +591,7 @@ portfolio piece":
   hardest and most decisive piece for AR product viability.
 - **Pricing page + /legal**: terms, privacy, basic ToS. Required
   before any paid customer (and for trust signal even on free).
-- **Custom domain + soft launch infra**: hourcounter.com.ar, Sentry
+- **Soft launch infra**: clockity.app is live; still pending Sentry
   for prod errors, Resend for transactional email (Supabase
   default lands in spam), PostHog free tier for funnel analytics,
   Supabase backup policy.
