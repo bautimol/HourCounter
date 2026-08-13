@@ -15,12 +15,12 @@ export default function Icon() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "linear-gradient(135deg, #059669 0%, #047857 100%)",
+          background: "linear-gradient(135deg, #0f0f13 0%, #07070a 100%)",
           // Maskable safe zone: keep the mark inside the inner ~80% radius.
           borderRadius: 96,
         }}
       >
-        <LogoMark size={300} />
+        <LogoMark size={300} color="#10b981" />
       </div>
     ),
     { ...size },

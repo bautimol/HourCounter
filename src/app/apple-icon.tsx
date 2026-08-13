@@ -15,11 +15,11 @@ export default function AppleIcon() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "linear-gradient(135deg, #059669 0%, #047857 100%)",
+          background: "linear-gradient(135deg, #0f0f13 0%, #07070a 100%)",
           // iOS rounds the icon itself, so we don't need explicit radius.
         }}
       >
-        <LogoMark size={124} />
+        <LogoMark size={124} color="#10b981" />
       </div>
     ),
     { ...size },
