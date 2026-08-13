@@ -138,7 +138,7 @@ export default async function LandingPage() {
         {/* Footer */}
         <footer className="mx-auto max-w-6xl px-4 pb-10">
           <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-8 text-sm text-muted-foreground">
-            <p>© {new Date().getFullYear()} HourCounter</p>
+            <p>© {new Date().getFullYear()} Clockity</p>
           </div>
         </footer>
       </main>

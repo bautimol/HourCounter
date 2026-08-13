@@ -139,7 +139,7 @@ export default async function PaymentDetailPage({
             </h1>
           </div>
           <div className="text-right text-xs text-muted-foreground">
-            <p className="font-mono uppercase tracking-wider">HourCounter</p>
+            <p className="font-mono uppercase tracking-wider">Clockity</p>
             <p className="mt-0.5 tabular-nums">
               {paidAt.toLocaleDateString("es-AR", { timeZone: AR_TIME_ZONE })}
             </p>

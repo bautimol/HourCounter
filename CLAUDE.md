@@ -1,6 +1,6 @@
 @AGENTS.md
 
-# HourCounter — Project context
+# Clockity — Project context
 
 > Living doc. Update when state changes (new feature shipped, decision
 > revisited, schema migrated). Aim for "what would I need if I dropped
@@ -475,7 +475,7 @@ Steps for the first deploy:
    Also add the prod origin to the Google OAuth client's authorized
    JavaScript origins, or Google sign-in works locally but not in prod.
 8. Open the URL on an Android phone, sign up, look for the
-   "Instalá HourCounter" banner on `/app`. Tap install. Now it lives
+   "Instalá Clockity" banner on `/app`. Tap install. Now it lives
    on the home screen.
 
 For the real-domain step (`hourcounter.com.ar`), go to Vercel project

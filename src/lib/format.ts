@@ -1,5 +1,5 @@
 /**
- * Display helpers for HourCounter domain values.
+ * Display helpers for Clockity domain values.
  */
 
 /**

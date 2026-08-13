@@ -53,7 +53,7 @@ export function AuthHero() {
             <Clock3 className="h-5 w-5" aria-hidden />
           </span>
           <span className="text-base font-semibold tracking-tight text-foreground">
-            HourCounter
+            Clockity
           </span>
         </motion.div>
 

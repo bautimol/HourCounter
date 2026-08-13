@@ -389,7 +389,7 @@ export default async function MemberReportPage({
         </section>
 
         <p className="mt-8 text-center text-[11px] text-muted-foreground">
-          Emitido el {formatDayMonthYear(new Date())} · HourCounter
+          Emitido el {formatDayMonthYear(new Date())} · Clockity
         </p>
       </article>
 

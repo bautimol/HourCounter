@@ -16,13 +16,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "HourCounter",
+  title: "Clockity",
   description:
     "Tracking de horas, verificación de turnos y cálculo automático de pagos.",
-  applicationName: "HourCounter",
+  applicationName: "Clockity",
   appleWebApp: {
     capable: true,
-    title: "HourCounter",
+    title: "Clockity",
     statusBarStyle: "default",
   },
 };

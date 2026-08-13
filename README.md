@@ -1,4 +1,4 @@
-# HourCounter
+# Clockity
 
 Dashboard multi-empleador para tracking de horas trabajadas y cálculo automático de pagos. Cada *grupo* es un espacio de trabajo donde uno o más **empleadores** definen *roles* (cajero, cocinero, etc.) e invitan **empleados** por link. Los empleados fichan entrada/salida; al momento de pagar, el sistema suma horas × tarifa + montos fijos del período.
 

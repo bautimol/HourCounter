@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "HourCounter",
-    short_name: "HourCounter",
+    name: "Clockity",
+    short_name: "Clockity",
     description:
       "Tracking de horas, verificación de turnos y cálculo automático de pagos para empleadores informales en Argentina.",
     start_url: "/",

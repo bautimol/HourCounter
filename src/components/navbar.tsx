@@ -85,7 +85,7 @@ export function AppNavbar({
             <Clock3 className="h-4 w-4" aria-hidden />
           </span>
           <span className="text-sm font-semibold tracking-tight">
-            HourCounter
+            Clockity
           </span>
         </Link>
 

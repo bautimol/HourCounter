@@ -213,7 +213,7 @@ export function PushSection({ vapidPublicKey }: { vapidPublicKey: string | null 
         {install.kind === "available" && (
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3">
             <div className="text-sm">
-              <p className="font-medium text-foreground">Instalar HourCounter</p>
+              <p className="font-medium text-foreground">Instalar Clockity</p>
               <p className="text-xs text-muted-foreground">
                 La app aparece en tu pantalla principal y se abre en pantalla
                 completa.

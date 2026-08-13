@@ -120,7 +120,7 @@ export function InstallBanner() {
     return (
       <Banner
         icon={<Download className="h-4 w-4" aria-hidden />}
-        text="Instalá HourCounter para que aparezca en tu pantalla principal."
+        text="Instalá Clockity para que aparezca en tu pantalla principal."
         action={{ label: "Instalar", onClick: install }}
         onDismiss={dismiss}
       />

@@ -1,4 +1,4 @@
-/* HourCounter — service worker
+/* Clockity — service worker
  *
  * Handles:
  *   - install / activate (claim immediately, no offline cache for now)
@@ -31,10 +31,10 @@ self.addEventListener("push", (event) => {
   try {
     payload = event.data.json();
   } catch {
-    payload = { title: "HourCounter", body: event.data.text() };
+    payload = { title: "Clockity", body: event.data.text() };
   }
 
-  const title = payload.title || "HourCounter";
+  const title = payload.title || "Clockity";
   const body = payload.body || "";
   const url = payload.url || "/app";
   const tag = payload.tag || title;
