@@ -57,9 +57,12 @@ export function Logo({ className }: { className?: string }) {
 export function LogoMark({
   size,
   color = "#ffffff",
+  strokeWidth = 3.4,
 }: {
   size: number;
   color?: string;
+  /** Bump this for tab-sized renders — 3.4 thins out to under a pixel at 32px. */
+  strokeWidth?: number;
 }) {
   return (
     <svg
@@ -68,7 +71,7 @@ export function LogoMark({
       viewBox="0 0 48 48"
       fill="none"
       stroke={color}
-      strokeWidth={3.4}
+      strokeWidth={strokeWidth}
       strokeLinecap="round"
       strokeLinejoin="round"
     >
