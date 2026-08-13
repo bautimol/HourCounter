@@ -37,10 +37,15 @@ inline elements and the button collapses to bare underlined text.
 **No SVG.** The mark is referenced as the generated PNG. Gmail and Outlook do
 not render inline SVG.
 
-**Pinned to light.** `color-scheme: light` stops Gmail and Apple Mail from
-auto-inverting into a version nobody designed. Dark-mode support across clients
-is inconsistent enough that two half-working themes is worse than one that
-always looks right.
+**Dark, and declared as such.** `color-scheme: dark` tells Apple Mail and
+Outlook the design is already dark so they stop trying to "fix" it. Belt and
+braces on top of that: every structural cell carries its colour on both the
+`bgcolor` attribute and the inline style, because a client that drops one and
+keeps the other is how a dark email ends up white-on-white in one block.
+
+Gmail on Android still adjusts colours on its own in some configurations. That
+is the known cost of a dark email and there is no reliable way around it —
+check there first if someone reports it looking odd.
 
 **Always keep the raw URL.** Some corporate clients strip buttons. Without the
 pasted-link fallback below the divider, those users cannot confirm at all.

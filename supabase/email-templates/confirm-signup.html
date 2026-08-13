@@ -3,21 +3,19 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <!-- Tells Gmail / Apple Mail not to auto-invert this into a broken dark
-         version. Email dark-mode support is inconsistent enough that pinning
-         to light beats designing two themes that half-render. -->
-    <meta name="color-scheme" content="light" />
-    <meta name="supported-color-schemes" content="light" />
+    <!-- Declares the design as dark so Apple Mail and Outlook leave it alone
+         instead of trying to "fix" it into a light version. -->
+    <meta name="color-scheme" content="dark" />
+    <meta name="supported-color-schemes" content="dark" />
     <title>Confirmá tu cuenta en Clockity</title>
   </head>
   <body
-    style="margin:0;padding:0;background-color:#fafaf7;-webkit-font-smoothing:antialiased;"
+    bgcolor="#07070a"
+    style="margin:0;padding:0;background-color:#07070a;-webkit-font-smoothing:antialiased;"
   >
-    <!-- Preview line in the inbox list, hidden inside the message itself.
-         Without it clients pull the first visible words, which would be the
-         heading repeated. -->
+    <!-- Preview line in the inbox list, hidden inside the message itself. -->
     <div
-      style="display:none;font-size:1px;color:#fafaf7;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;"
+      style="display:none;font-size:1px;color:#07070a;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;"
     >
       Confirmá tu cuenta para empezar a usar Clockity.
     </div>
@@ -28,10 +26,11 @@
       cellspacing="0"
       border="0"
       width="100%"
-      style="background-color:#fafaf7;"
+      bgcolor="#07070a"
+      style="background-color:#07070a;"
     >
       <tr>
-        <td align="center" style="padding:32px 16px;">
+        <td align="center" bgcolor="#07070a" style="background-color:#07070a;padding:32px 16px;">
           <!-- 600px is the widest that still fits the Outlook reading pane. -->
           <table
             role="presentation"
@@ -54,10 +53,14 @@
               </td>
             </tr>
 
-            <!-- Card -->
+            <!-- Card. Every structural cell carries its colour on both the
+                 bgcolor attribute and the inline style: clients that drop one
+                 keep the other, which is what stops a dark design from
+                 collapsing to white-on-white somewhere. -->
             <tr>
               <td
-                style="background-color:#ffffff;border:1px solid #e7e5e4;border-radius:16px;padding:40px 32px;"
+                bgcolor="#0f0f13"
+                style="background-color:#0f0f13;border:1px solid #25252c;border-radius:16px;padding:40px 32px;"
               >
                 <table
                   role="presentation"
@@ -68,14 +71,14 @@
                 >
                   <tr>
                     <td
-                      style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:24px;line-height:1.25;font-weight:700;color:#0f0f12;padding:0 0 12px 0;"
+                      style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:24px;line-height:1.25;font-weight:700;color:#fafafa;padding:0 0 12px 0;"
                     >
                       Confirmá tu cuenta
                     </td>
                   </tr>
                   <tr>
                     <td
-                      style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.6;color:#6b6f76;padding:0 0 28px 0;"
+                      style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.6;color:#9ca0a8;padding:0 0 28px 0;"
                     >
                       Ya casi estás. Tocá el botón para activar tu cuenta y
                       empezar a llevar las horas de tu equipo.
@@ -96,13 +99,13 @@
                         <tr>
                           <td
                             align="center"
-                            bgcolor="#047857"
-                            style="background-color:#047857;border-radius:10px;"
+                            bgcolor="#10b981"
+                            style="background-color:#10b981;border-radius:10px;"
                           >
                             <a
                               href="{{ .ConfirmationURL }}"
                               target="_blank"
-                              style="display:inline-block;padding:14px 28px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:16px;font-weight:600;line-height:1;color:#ffffff;text-decoration:none;border-radius:10px;"
+                              style="display:inline-block;padding:14px 28px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:16px;font-weight:600;line-height:1;color:#042c1d;text-decoration:none;border-radius:10px;"
                               >Confirmar mi cuenta</a
                             >
                           </td>
@@ -115,7 +118,7 @@
                        raw URL has to be reachable or the account is stuck. -->
                   <tr>
                     <td
-                      style="border-top:1px solid #e7e5e4;padding:20px 0 0 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:13px;line-height:1.6;color:#6b6f76;"
+                      style="border-top:1px solid #25252c;padding:20px 0 0 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:13px;line-height:1.6;color:#9ca0a8;"
                     >
                       Si el botón no te funciona, copiá y pegá este link en tu
                       navegador:
@@ -123,7 +126,7 @@
                       <a
                         href="{{ .ConfirmationURL }}"
                         target="_blank"
-                        style="color:#047857;word-break:break-all;"
+                        style="color:#34d399;word-break:break-all;"
                         >{{ .ConfirmationURL }}</a
                       >
                     </td>
@@ -136,7 +139,7 @@
             <tr>
               <td
                 align="center"
-                style="padding:24px 16px 0 16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:13px;line-height:1.6;color:#6b6f76;"
+                style="padding:24px 16px 0 16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:13px;line-height:1.6;color:#9ca0a8;"
               >
                 Este link se puede usar una sola vez.
                 <br />
@@ -146,7 +149,7 @@
             <tr>
               <td
                 align="center"
-                style="padding:16px 0 0 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;color:#9ca0a8;"
+                style="padding:16px 0 0 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;color:#6b6f76;"
               >
                 Clockity
               </td>
