@@ -42,6 +42,16 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/signup") ||
     pathname.startsWith("/auth") ||
     pathname.startsWith("/invite") ||
+    // Brand assets. These are generated routes rather than files under
+    // /public, so the matcher's extension rules never excluded them and they
+    // were answering 307 to /login: the favicon was broken on every page a
+    // logged-out visitor can reach, the manifest icons could not load, and an
+    // <img> pointing here from an email would resolve to a login page.
+    pathname === "/icon" ||
+    pathname.startsWith("/icon0") ||
+    pathname.startsWith("/icon1") ||
+    pathname.startsWith("/apple-icon") ||
+    pathname === "/manifest.webmanifest" ||
     pathname === "/";
 
   if (!user && !isPublicPath) {
