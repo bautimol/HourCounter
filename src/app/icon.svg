@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="2 3 43 43" fill="none">
+  <!--
+    Browser-tab favicon: the mark alone, no plate behind it.
+
+    SVG rather than a generated PNG for one reason a raster cannot do — the
+    stroke follows the browser's theme. A single fixed green has to lose
+    somewhere: emerald-700 disappears against a dark tab strip, emerald-400
+    washes out against a light one. Chrome, Firefox and Safari all honour
+    prefers-color-scheme inside an SVG favicon, so each gets the tone that
+    actually reads.
+
+    Older browsers that ignore SVG favicons fall back to the 192px PNG, which
+    keeps its emerald plate — correct there, since that one also serves as an
+    app icon over arbitrary wallpaper.
+
+    Tighter viewBox than the in-app logo (2 3 43 43 rather than 0 0 48 48):
+    with no plate there is no reason to pad, and filling the box is what keeps
+    it legible at 16px. Stroke is heavier for the same reason, and the trailing
+    dot is dropped — under two pixels it reads as dirt, not motion.
+  -->
+  <style>
+    path {
+      stroke: #047857;
+      stroke-width: 4;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    @media (prefers-color-scheme: dark) {
+      path { stroke: #34d399; }
+    }
+  </style>
+
+  <!-- Ring, open on the left where the motion lines enter. -->
+  <path d="M16.53 15.97 A14 14 0 1 1 16.53 32.03" />
+
+  <!-- Hands: 12 and roughly 4:30. -->
+  <path d="M28 24 V15.5" />
+  <path d="M28 24 L34.5 30.5" />
+
+  <!-- Speed lines. -->
+  <path d="M11.5 17.5 H17.5" />
+  <path d="M5.5 24 H15" />
+  <path d="M10.5 30.5 H16.5" />
+</svg>
