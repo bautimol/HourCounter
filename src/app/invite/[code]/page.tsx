@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AlertCircle, Clock3, LogIn, UserPlus } from "lucide-react";
+import { AlertCircle, LogIn, UserPlus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { AcceptInvitationButton } from "./accept-button";
+import { Logo } from "@/components/logo";
 
 type Invitation = {
   id: string;
@@ -72,9 +73,7 @@ export default async function InviteLandingPage({
           href="/"
           className="flex items-center justify-center gap-2 text-foreground"
         >
-          <span className="grid h-9 w-9 place-items-center rounded-lg bg-accent text-accent-foreground shadow-md shadow-emerald-700/30">
-            <Clock3 className="h-5 w-5" aria-hidden />
-          </span>
+          <Logo className="h-9 w-9 text-accent" />
           <span className="text-base font-semibold tracking-tight">
             Clockity
           </span>

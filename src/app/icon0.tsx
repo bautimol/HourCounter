@@ -1,11 +1,15 @@
 import { ImageResponse } from "next/og";
+import { LogoMark } from "@/components/logo";
 
 export const size = { width: 192, height: 192 };
 export const contentType = "image/png";
 
 /**
- * 192×192 PWA icon. Solid emerald square with a stylized "H" mark — same
- * brand as the Clock3 + bg-accent square in the navbar / auth hero.
+ * 192×192 PWA icon: the Clockity mark on the emerald square.
+ *
+ * The mark is drawn white on the gradient rather than emerald on transparent —
+ * a home-screen icon sits on whatever wallpaper the user has, so it needs to
+ * carry its own background.
  */
 export default function Icon() {
   return new ImageResponse(
@@ -19,15 +23,9 @@ export default function Icon() {
           justifyContent: "center",
           background: "linear-gradient(135deg, #059669 0%, #047857 100%)",
           borderRadius: 36,
-          color: "#ffffff",
-          fontFamily: "ui-sans-serif, system-ui, sans-serif",
-          fontSize: 130,
-          fontWeight: 800,
-          letterSpacing: -4,
-          lineHeight: 1,
         }}
       >
-        H
+        <LogoMark size={132} />
       </div>
     ),
     { ...size },

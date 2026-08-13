@@ -2,8 +2,8 @@
 
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
-import { Clock3 } from "lucide-react";
 import { formatStopwatch } from "@/lib/format";
+import { Logo } from "@/components/logo";
 
 /**
  * Decorative right-hand panel for the auth pages. Static gradient + grid +
@@ -49,9 +49,7 @@ export function AuthHero() {
           transition={{ duration: 0.4 }}
           className="flex items-center gap-2"
         >
-          <span className="grid h-9 w-9 place-items-center rounded-lg bg-accent text-accent-foreground shadow-md shadow-emerald-700/30">
-            <Clock3 className="h-5 w-5" aria-hidden />
-          </span>
+          <Logo className="h-9 w-9 text-accent" />
           <span className="text-base font-semibold tracking-tight text-foreground">
             Clockity
           </span>

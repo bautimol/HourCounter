@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { LogoMark } from "@/components/logo";
 
 export const size = { width: 180, height: 180 };
 export const contentType = "image/png";
@@ -16,15 +17,9 @@ export default function AppleIcon() {
           justifyContent: "center",
           background: "linear-gradient(135deg, #059669 0%, #047857 100%)",
           // iOS rounds the icon itself, so we don't need explicit radius.
-          color: "#ffffff",
-          fontFamily: "ui-sans-serif, system-ui, sans-serif",
-          fontSize: 124,
-          fontWeight: 800,
-          letterSpacing: -4,
-          lineHeight: 1,
         }}
       >
-        H
+        <LogoMark size={124} />
       </div>
     ),
     { ...size },

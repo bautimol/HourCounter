@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { Clock3 } from "lucide-react";
 import { AuthHero } from "./auth-hero";
+import { Logo } from "@/components/logo";
 
 export default function AuthLayout({
   children,
@@ -17,9 +17,7 @@ export default function AuthLayout({
             href="/"
             className="inline-flex items-center gap-2"
           >
-            <span className="grid h-8 w-8 place-items-center rounded-lg bg-accent text-accent-foreground shadow-sm shadow-emerald-700/30">
-              <Clock3 className="h-4 w-4" aria-hidden />
-            </span>
+            <Logo className="h-7 w-7 text-accent" />
             <span className="text-sm font-semibold tracking-tight">
               Clockity
             </span>

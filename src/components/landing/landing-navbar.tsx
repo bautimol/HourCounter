@@ -3,8 +3,8 @@
 import { motion, useMotionValueEvent, useScroll } from "motion/react";
 import Link from "next/link";
 import { useState } from "react";
-import { Clock3 } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { Logo } from "@/components/logo";
 
 /**
  * Public landing navbar. Same morph-on-scroll pattern as AppNavbar but
@@ -38,9 +38,7 @@ export function LandingNavbar() {
         )}
       >
         <Link href="/" className="flex shrink-0 items-center gap-2">
-          <span className="grid h-8 w-8 place-items-center rounded-lg bg-accent text-accent-foreground shadow-sm shadow-emerald-600/20">
-            <Clock3 className="h-4 w-4" aria-hidden />
-          </span>
+          <Logo className="h-7 w-7 text-accent" />
           <span className="text-sm font-semibold tracking-tight">
             Clockity
           </span>

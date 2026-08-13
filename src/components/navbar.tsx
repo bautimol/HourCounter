@@ -3,8 +3,9 @@
 import { motion, useMotionValueEvent, useScroll } from "motion/react";
 import Link from "next/link";
 import { useRef, useState, type MouseEvent, type ReactNode } from "react";
-import { Clock3, LogOut, Menu, X } from "lucide-react";
+import { LogOut, Menu, X } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
+import { Logo } from "@/components/logo";
 import { ProfileMenu } from "@/components/profile-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/cn";
@@ -81,9 +82,7 @@ export function AppNavbar({
           className="flex shrink-0 items-center gap-2"
           onClick={() => setMobileOpen(false)}
         >
-          <span className="grid h-8 w-8 place-items-center rounded-lg bg-accent text-accent-foreground shadow-sm shadow-emerald-600/20">
-            <Clock3 className="h-4 w-4" aria-hidden />
-          </span>
+          <Logo className="h-7 w-7 text-accent" />
           <span className="text-sm font-semibold tracking-tight">
             Clockity
           </span>
