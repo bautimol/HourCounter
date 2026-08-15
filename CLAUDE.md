@@ -411,6 +411,10 @@ HourCounter/
   numbered sequentially. Apply manually via Supabase SQL Editor (no
   Supabase CLI configured yet). After each migration, verify with the
   user before relying on it.
+- **Branching**: work goes to `development`. `main` is protected and
+  only takes pull requests — a direct push is rejected with "Changes must
+  be made through a pull request", so `main` is reached by merging
+  `development` into it, never by pushing.
 
 ## Setup for a fresh checkout
 
