@@ -114,21 +114,24 @@
                     </td>
                   </tr>
 
-                  <!-- Fallback. Some corporate clients strip the button; the
-                       raw URL has to be reachable or the account is stuck. -->
+                  <!-- Fallback for a stripped button. The raw URL used to be
+                       printed here; it wrapped to three lines of pkce token and
+                       supabase.co host, which looks like phishing rather than
+                       reassurance. Both this and the button are plain <a href>,
+                       so a client that renders one renders the other — what is
+                       actually given up is copying the link to open on another
+                       device. -->
                   <tr>
                     <td
                       style="border-top:1px solid #25252c;padding:20px 0 0 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:13px;line-height:1.6;color:#9ca0a8;"
                     >
-                      Si el botón no te funciona, copiá y pegá este link en tu
-                      navegador:
-                      <br />
+                      ¿No te anda el botón?
                       <a
                         href="{{ .ConfirmationURL }}"
                         target="_blank"
-                        style="color:#34d399;word-break:break-all;"
-                        >{{ .ConfirmationURL }}</a
-                      >
+                        style="color:#34d399;font-weight:600;"
+                        >Entrá desde acá</a
+                      >.
                     </td>
                   </tr>
                 </table>
