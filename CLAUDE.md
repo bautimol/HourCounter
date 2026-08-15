@@ -533,6 +533,75 @@ they follow the Site URL setting on their own.
 
 After every push to `main`, Vercel auto-deploys.
 
+## Email
+
+Auth mail goes out through **Resend**, from **`Clockity <confirmations@clockity.app>`**.
+
+### Why custom SMTP was mandatory, not cosmetic
+
+Supabase's built-in sender is not a weaker version of a real one — it
+**refuses to deliver to any address that is not a member of the project's
+organization**, answering *"Email address not authorized"*. Every real signup
+and every password reset for anyone outside the team silently never arrived.
+It also caps the whole project at a couple of messages per hour and the docs
+say plainly it is for development only.
+
+This is invisible in testing, because you test with your own address, which
+is on the team. Do not move the project to another Supabase org, or reuse
+this setup elsewhere, without configuring SMTP first.
+
+### DNS, and why the two mail systems do not collide
+
+Google Workspace holds the **root** of `clockity.app` and receives; Resend
+sends from the **`send.` subdomain**. That split is the whole trick — the
+root `MX` is untouched, so the existing mailboxes keep working.
+
+Verified live:
+
+| Record | Name | Value |
+|--------|------|-------|
+| `MX` | `send` | `feedback-smtp.sa-east-1.amazonses.com` |
+| `TXT` | `send` | `v=spf1 include:amazonses.com ~all` |
+| `TXT` | `resend._domainkey` | DKIM key (from Resend) |
+| `TXT` | `_dmarc` | `v=DMARC1; p=none; rua=mailto:soporte@clockity.app` |
+| `TXT` | `@` | `v=spf1 include:_spf.google.com ~all` |
+| `MX` | `@` | `smtp.google.com` — Workspace, pre-existing |
+
+DNS is at **Vercel** (`ns1.vercel-dns.com`), not at a registrar panel.
+Resend's region is `sa-east-1`, next to the database and the users.
+
+DMARC is at `p=none` — reporting only, enforcing nothing. Read a few weeks
+of `rua` reports before tightening to `p=quarantine`, or legitimate mail
+starts disappearing.
+
+### Supabase settings
+
+Project Settings → Authentication → SMTP: host `smtp.resend.com`, port `465`,
+username the literal string **`resend`** (not an address — the usual mistake),
+password a Resend API key.
+
+**Raise the send rate limit by hand** in Authentication → Rate Limits.
+Configuring SMTP does not lift the built-in cap on its own, and leaving it is
+how you end up rate-limited on your own provider.
+
+### Templates
+
+`supabase/email-templates/` — kept in the repo because the dashboard gives
+them no history, no review, and loses them if the project is recreated. That
+directory's README carries the email-specific constraints (tables, inline
+styles, button padding on the `<td>`, no SVG) and the reason behind each.
+
+### Open
+
+- `confirmations@clockity.app` should exist as a **Workspace alias** so
+  replies land somewhere. It only sends today; the root MX is Google, so a
+  reply to a non-existent address bounces. Aliases are free.
+- **A sender avatar was considered and dropped.** The Gmail circle is BIMI,
+  and Gmail honours it only with a VMC — roughly USD 1,000+/year and a
+  registered trademark. Revisit if the brand is ever registered. The free
+  thing worth trying first is a Workspace profile photo on the account that
+  owns the alias.
+
 ## Things to know about Next.js 16 in this repo
 
 - `middleware.ts` does not exist — use `proxy.ts` (root or `src/`).
@@ -562,7 +631,8 @@ End-to-end loop closed (2026-05-06): invite → clock → verify → pay
 ### Monetization track (in parallel — gates "vendible")
 
 See "Path to monetization" section. Pricing decision, MercadoPago
-integration, /legal pages, custom domain + Sentry/Resend/PostHog.
+integration, /legal pages, Sentry/PostHog. The custom domain and
+transactional email are done — see "Production" and "Email".
 This track requires business decisions the owner needs to make
 (precio/empleado, plan free, ToS) — engineering can't unilaterally
 move it forward.
@@ -615,10 +685,10 @@ portfolio piece":
   hardest and most decisive piece for AR product viability.
 - **Pricing page + /legal**: terms, privacy, basic ToS. Required
   before any paid customer (and for trust signal even on free).
-- **Soft launch infra**: clockity.app is live; still pending Sentry
-  for prod errors, Resend for transactional email (Supabase
-  default lands in spam), PostHog free tier for funnel analytics,
-  Supabase backup policy.
+- **Soft launch infra**: clockity.app is live and transactional email
+  runs through Resend (see "Email"). Still pending: Sentry for prod
+  errors, PostHog free tier for funnel analytics, Supabase backup
+  policy.
 - **Onboarding plantilla** "Mi primer local en 2 minutos": pre-load
   a group with 2 typical AR roles (Cajero/Cocinero) and a generated
   invite link, so the dueño doesn't face a blank slate.
