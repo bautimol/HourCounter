@@ -86,6 +86,15 @@ const EXACT: Record<string, string> = {
   "User already registered": "Ya existe una cuenta con ese email.",
   "Email rate limit exceeded":
     "Probaste demasiadas veces. Esperá unos minutos.",
+
+  // Recuperar contraseña. El link caduca y se quema al primer uso, así que
+  // "venció o ya se usó" es el caso normal, no un error del que lo intenta.
+  "Auth session missing!":
+    "El link de recuperación venció o ya se usó. Pedí uno nuevo.",
+  "New password should be different from the old password.":
+    "La contraseña nueva tiene que ser distinta de la anterior.",
+  "Unable to validate email address: invalid format":
+    "Ese email no está bien escrito. Revisalo.",
 };
 
 /** Fragmentos: para mensajes con partes variables o de Postgres. */
@@ -101,6 +110,17 @@ const CONTAINS: [string, string][] = [
   ["duplicate key", "Ese dato ya existe."],
   ["Password should be at least", "La contraseña es demasiado corta."],
   ["rate limit", "Probaste demasiadas veces. Esperá unos minutos."],
+  // Supabase throttles recovery mails per address; the wait is seconds, so
+  // "esperá unos minutos" would read as broken.
+  [
+    "you can only request this after",
+    "Recién pediste un link. Esperá unos segundos antes de pedir otro.",
+  ],
+  [
+    "Email link is invalid or has expired",
+    "Ese link venció o ya se usó. Pedí uno nuevo.",
+  ],
+  ["Token has expired or is invalid", "Ese link venció o ya se usó."],
   ["Failed to fetch", "No pudimos conectarnos. Revisá tu internet."],
   ["fetch failed", "No pudimos conectarnos. Revisá tu internet."],
   // PostgREST when an RPC does not exist (PGRST202). Migrations here are

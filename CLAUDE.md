@@ -198,6 +198,20 @@ read policy (which lets every member see profile scalars).
     notified. It now runs inside `after()` from `next/server`, which
     fires once the response is sent. Server Functions may use request
     APIs inside `after`, so the Supabase client keeps working there.
+18. **Password recovery is authorised by a session, not by a token in a
+    form.** `/auth/reset` consumes the emailed link — `token_hash` +
+    `verifyOtp({type:'recovery'})`, or `code` + `exchangeCodeForSession`,
+    because which one arrives depends on the dashboard's email template — and
+    that leaves a real session in the cookie. `/reset-password` then calls
+    `updateUser({password})` against it. So an expired or reused link fails
+    with no one to act as, instead of the form having to prove anything.
+    Both recovery screens are **public in the proxy**: guarding them sends the
+    person who cannot log in to `/login`, which is the screen they are stuck
+    on. Landing on `/reset-password` with no session is a normal outcome and
+    renders "ese link ya no sirve" plus a way to ask for another.
+    The reset mail deliberately does not carry `next`: Supabase only honours a
+    `redirectTo` that matches its allowlist exactly, so the URL is fixed and
+    the destination is always `/reset-password`.
 
 ## Repository layout
 
@@ -312,6 +326,7 @@ HourCounter/
 | Email/password signup + login               | ✅ done        |
 | Google sign-in (OAuth, PKCE via /auth/callback) | ✅ done    |
 | Email confirmation flow                     | ✅ done        |
+| Recuperar contraseña (link por mail)        | ✅ done        |
 | Signout                                     | ✅ done        |
 | Create / list groups                        | ✅ done        |
 | Group detail + members                      | ✅ done        |
@@ -408,8 +423,9 @@ npm run dev                            # http://localhost:3000
 Supabase config required:
 - Auth → URL Configuration:
   - Site URL: `http://localhost:3000`
-  - Redirect URLs: `http://localhost:3000/auth/confirm` and
-    `http://localhost:3000/auth/callback`
+  - Redirect URLs: `http://localhost:3000/auth/confirm`,
+    `http://localhost:3000/auth/callback` and
+    `http://localhost:3000/auth/reset`
 - (Optional for dev) Auth → Providers → Email: disable "Confirm email".
 
 For Google sign-in (dashboard-only, no migration):
@@ -469,8 +485,12 @@ Steps for the first deploy:
 6. **Deploy**. You get `your-project.vercel.app`.
 7. **Update Supabase** → Auth → URL Configuration:
    - Site URL: `https://your-project.vercel.app`
-   - Redirect URLs: add `https://your-project.vercel.app/auth/confirm`
-     and `https://your-project.vercel.app/auth/callback`
+   - Redirect URLs: add `https://your-project.vercel.app/auth/confirm`,
+     `https://your-project.vercel.app/auth/callback` and
+     `https://your-project.vercel.app/auth/reset` — the last one is what the
+     password-recovery mail comes back to, and Supabase silently falls back to
+     the Site URL when a `redirectTo` is not on this list, so a missing entry
+     shows up as "el link me deja en la home" rather than as an error.
    (Keep the localhost ones too for dev.)
    Also add the prod origin to the Google OAuth client's authorized
    JavaScript origins, or Google sign-in works locally but not in prod.

@@ -42,6 +42,13 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/signup") ||
     pathname.startsWith("/auth") ||
     pathname.startsWith("/invite") ||
+    // Password recovery. Someone who cannot log in is by definition without a
+    // session, so guarding these would send them to /login — the screen they
+    // are stuck on. /reset-password is included even though it normally does
+    // have a session by the time it renders: a dead link arrives without one,
+    // and it has to be able to say so instead of bouncing.
+    pathname.startsWith("/forgot-password") ||
+    pathname.startsWith("/reset-password") ||
     // Brand assets (icon*, apple-icon, manifest, sw.js) are not listed here on
     // purpose: the matcher in src/proxy.ts excludes them outright, so this
     // function never runs for them and a favicon fetch costs no getUser().
