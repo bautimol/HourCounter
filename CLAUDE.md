@@ -516,7 +516,7 @@ Anything that hardcodes a host has to move together:
 |-------|-------|
 | Vercel env | `NEXT_PUBLIC_SITE_URL=https://clockity.app` |
 | Supabase → URL Configuration | Site URL `https://clockity.app` |
-| Supabase → Redirect URLs | `https://clockity.app/auth/callback`, `.../auth/confirm` |
+| Supabase → Redirect URLs | `https://clockity.app/auth/callback`, `.../auth/confirm`, `.../auth/reset` |
 | Google Cloud → OAuth client | Authorized JS origin `https://clockity.app` |
 
 The Google client's *redirect URI* stays pointed at Supabase
