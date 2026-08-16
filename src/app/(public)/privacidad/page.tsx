@@ -227,15 +227,6 @@ export default function PrivacidadPage() {
         </p>
       </Section>
 
-      <Section title="Menores">
-        <p>
-          Clockity no está pensado para menores de 16 años y no creamos cuentas
-          para ellos. Si un empleador registra a una persona menor de esa edad,
-          es su responsabilidad y la de la legislación laboral que le
-          corresponda, no un uso previsto de la app.
-        </p>
-      </Section>
-
       <Section title="Cambios">
         <p>
           Si cambiamos esta política actualizamos la fecha de arriba, y si el
