@@ -1,9 +1,14 @@
 /**
  * Contact details, in one place.
  *
- * ⚠️ SUPPORT_EMAIL has to be a mailbox someone actually reads. A support link
- * pointing at an address that bounces is worse than no support link: the
- * person who writes believes they asked for help and then waits.
+ * SUPPORT_EMAIL is a real mailbox (clockity.app runs its mail on Google
+ * Workspace) — confirmed, not a placeholder, so it does not need "fixing".
+ * If it ever changes, changing it here is enough: the footer, the FAQ, both
+ * legal pages and the support screen all read from this constant.
+ *
+ * Whatever it points at has to stay a mailbox someone actually reads. A
+ * support link that bounces is worse than no support link: the person who
+ * writes believes they asked for help, and then waits.
  */
 export const SUPPORT_EMAIL = "soporte@clockity.app";
 

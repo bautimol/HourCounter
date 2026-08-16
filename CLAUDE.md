@@ -226,9 +226,12 @@ read policy (which lets every member see profile scalars).
     that clock-in coordinates are stored when the employer enables the
     geofence, and that the employer's notes about an employee are invisible to
     that employee.
-    ⚠️ `SUPPORT_EMAIL` in `src/lib/support.ts` is the single place contact
-    details live, and it must be a mailbox someone reads. A support link that
-    bounces is worse than none: the person believes they asked for help.
+    `SUPPORT_EMAIL` in `src/lib/support.ts` is the single place contact details
+    live — footer, FAQ, both legal pages and the support screen read from it.
+    `soporte@clockity.app` is a real mailbox (the domain's MX points at Google
+    Workspace), so it is not a placeholder to be swapped out. Whatever it
+    points at has to stay a mailbox someone reads: a support link that bounces
+    is worse than none, because the person believes they asked for help.
 20. **What a colleague earns is not group-readable** (0028). Until this
     migration any active member could read every coworker's `hourly_rate`,
     shifts, clock-in coordinates, viáticos and audit trail — verified by
