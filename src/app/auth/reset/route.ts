@@ -18,6 +18,17 @@ import { getOrigin } from "@/lib/origin";
  * `?token_hash=&type=recovery`. Handling both means the flow works before
  * anyone touches the dashboard, and keeps working after.
  */
+/**
+ * Measured, not assumed: asking for a second link invalidates the first.
+ * Two tokens were issued 96 seconds apart and left untouched in the same
+ * inbox; the older answered `otp_expired` and the newer worked. So the common
+ * way to get here is not a link that sat around too long — it is someone who
+ * did not see the mail, asked again, and then opened the first one. Without
+ * the second sentence they ask again, open the old mail again, and loop.
+ */
+const EXPIRED_MESSAGE =
+  "Ese link ya no sirve. Si pediste el mail más de una vez, abrí el último que te llegó: cada pedido nuevo anula el anterior.";
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
 
@@ -35,9 +46,7 @@ export async function GET(request: NextRequest) {
   // params — not by the exchange below failing — so this has to be checked
   // first or we'd fall through to "link inválido" and lose the real reason.
   if (searchParams.get("error") ?? searchParams.get("error_code")) {
-    return backToRequest(
-      "Ese link ya venció o ya se usó. Pedí uno nuevo, llega en un minuto.",
-    );
+    return backToRequest(EXPIRED_MESSAGE);
   }
 
   const tokenHash = searchParams.get("token_hash");
@@ -50,12 +59,12 @@ export async function GET(request: NextRequest) {
       token_hash: tokenHash,
     });
     if (error) {
-      return backToRequest("Ese link ya venció o ya se usó. Pedí uno nuevo.");
+      return backToRequest(EXPIRED_MESSAGE);
     }
   } else if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (error) {
-      return backToRequest("Ese link ya venció o ya se usó. Pedí uno nuevo.");
+      return backToRequest(EXPIRED_MESSAGE);
     }
   } else {
     return backToRequest("Ese link no es válido. Pedí uno nuevo.");
