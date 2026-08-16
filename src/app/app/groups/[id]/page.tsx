@@ -42,6 +42,7 @@ export default async function GroupDetailPage({
       data: { user },
     },
     { data: members },
+    { data: overview },
   ] = await Promise.all([
     supabase
       .from("groups")
@@ -51,16 +52,16 @@ export default async function GroupDetailPage({
     supabase.auth.getUser(),
     supabase
       .from("group_members")
-      .select(
-        `id, role, display_name, avatar_url, joined_at, user_id,
-         employee_profile:employee_profiles(
-           id,
-           position:positions(name)
-         )`,
-      )
+      .select("id, role, display_name, avatar_url, joined_at, user_id")
       .eq("group_id", id)
       .eq("status", "active")
       .order("joined_at", { ascending: true }),
+    // A colleague's profile and shifts are not readable any more (0028), so
+    // "quién está trabajando" and the job title come from a safe-columns RPC
+    // that returns presence and position name and nothing else. It also sweeps
+    // expired shifts before answering — which this screen never did in the
+    // right order, since the sweep used to run four waves after the badges.
+    supabase.rpc("group_members_overview", { target_group_id: id }),
   ]);
 
   if (groupError) {
@@ -77,66 +78,51 @@ export default async function GroupDetailPage({
 
   const memberIds = (members ?? []).map((m) => m.id);
 
-  // Each member's profile id, so the row can show "trabajando".
-  const profileIds: string[] = [];
-  const profileToMember = new Map<string, string>();
-  for (const m of members ?? []) {
-    const ep = Array.isArray(m.employee_profile)
-      ? m.employee_profile[0]
-      : (m.employee_profile as { id?: string } | null);
-    if (ep?.id) {
-      profileIds.push(ep.id);
-      profileToMember.set(ep.id, m.id);
-    }
+  // Presence and job title, keyed by member — the two things the list renders
+  // about someone else. Colleagues' profile ids are deliberately not here:
+  // needing them was what forced the reads that leaked the rate.
+  type OverviewRow = {
+    member_id: string;
+    position_name: string | null;
+    is_working: boolean;
+  };
+
+  const positionByMember = new Map<string, string>();
+  const workingIds = new Set<string>();
+  for (const row of (overview ?? []) as unknown as OverviewRow[]) {
+    if (row.position_name) positionByMember.set(row.member_id, row.position_name);
+    if (row.is_working) workingIds.add(row.member_id);
   }
 
   // Wave 2 — needs `user` and/or the member list from wave 1.
-  const [{ data: myMembership }, { data: nicknameRows }, { data: openShifts }] =
-    await Promise.all([
-      supabase
-        .from("group_members")
-        .select("id, role")
-        .eq("group_id", id)
-        .eq("user_id", user!.id)
-        .maybeSingle(),
-      // Per-viewer nicknames: load only mine for the members of this group.
-      memberIds.length > 0
-        ? supabase
-            .from("member_nicknames")
-            .select("target_member_id, nickname")
-            .eq("viewer_user_id", user!.id)
-            .in("target_member_id", memberIds)
-        : Promise.resolve({
-            data: [] as { target_member_id: string; nickname: string }[],
-          }),
-      profileIds.length > 0
-        ? supabase
-            .from("time_entries")
-            .select("employee_profile_id, clock_in")
-            .eq("status", "open")
-            .in("employee_profile_id", profileIds)
-        : Promise.resolve({
-            data: [] as { employee_profile_id: string; clock_in: string }[],
-          }),
-    ]);
+  const [{ data: myMembership }, { data: nicknameRows }] = await Promise.all([
+    supabase
+      .from("group_members")
+      .select("id, role")
+      .eq("group_id", id)
+      .eq("user_id", user!.id)
+      .maybeSingle(),
+    // Per-viewer nicknames: load only mine for the members of this group.
+    memberIds.length > 0
+      ? supabase
+          .from("member_nicknames")
+          .select("target_member_id, nickname")
+          .eq("viewer_user_id", user!.id)
+          .in("target_member_id", memberIds)
+      : Promise.resolve({
+          data: [] as { target_member_id: string; nickname: string }[],
+        }),
+  ]);
 
   const nicknameByMember = new Map<string, string>();
   for (const row of nicknameRows ?? []) {
     nicknameByMember.set(row.target_member_id, row.nickname);
   }
 
-  const openByMember = new Map<string, { clockIn: Date }>();
-  for (const s of openShifts ?? []) {
-    const memberId = profileToMember.get(s.employee_profile_id);
-    if (memberId) {
-      openByMember.set(memberId, { clockIn: new Date(s.clock_in) });
-    }
-  }
-
   const isEmployer = myMembership?.role === "employer";
   const isEmployee = myMembership?.role === "employee";
   const memberCount = members?.length ?? 0;
-  const workingNow = openByMember.size;
+  const workingNow = workingIds.size;
 
   // Wave 3 — the two employer counters, which need the role from wave 2.
   const [{ count: positionsCount }, { count: pendingShiftsCount }] =
@@ -169,17 +155,13 @@ export default async function GroupDetailPage({
   let closedTodayMinutes = 0;
 
   if (isEmployee && myMembership) {
-    // The sweep closes expired shifts so the reads below are accurate. It
-    // touches time_entries only, so looking up the profile id can ride along
-    // in the same round trip rather than waiting for it.
-    const [, { data: profile }] = await Promise.all([
-      supabase.rpc("auto_close_expired_shifts"),
-      supabase
-        .from("employee_profiles")
-        .select("id")
-        .eq("group_member_id", myMembership.id)
-        .maybeSingle(),
-    ]);
+    // No sweep here: group_members_overview already ran one in wave 1, before
+    // the badges were computed. Running a second one per page load is waste.
+    const { data: profile } = await supabase
+      .from("employee_profiles")
+      .select("id")
+      .eq("group_member_id", myMembership.id)
+      .maybeSingle();
 
     if (profile) {
       const [{ data: open }, { data: recent }, { data: todayEntries }] =
@@ -400,19 +382,8 @@ export default async function GroupDetailPage({
                 ? m.display_name
                 : null;
 
-            const ep = Array.isArray(m.employee_profile)
-              ? m.employee_profile[0]
-              : (m.employee_profile as
-                  | { position?: { name?: string } | { name?: string }[] | null }
-                  | null);
-            const positionRaw = ep?.position;
-            const positionName = positionRaw
-              ? Array.isArray(positionRaw)
-                ? positionRaw[0]?.name
-                : positionRaw.name
-              : null;
-
-            const open = openByMember.get(m.id);
+            const positionName = positionByMember.get(m.id) ?? null;
+            const open = workingIds.has(m.id);
             const subtitleParts: string[] = [];
             if (positionName) subtitleParts.push(positionName);
             if (realNameAside) subtitleParts.push(realNameAside);

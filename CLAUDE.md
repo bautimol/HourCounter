@@ -229,6 +229,35 @@ read policy (which lets every member see profile scalars).
     ⚠️ `SUPPORT_EMAIL` in `src/lib/support.ts` is the single place contact
     details live, and it must be a mailbox someone reads. A support link that
     bounces is worse than none: the person believes they asked for help.
+20. **What a colleague earns is not group-readable** (0028). Until this
+    migration any active member could read every coworker's `hourly_rate`,
+    shifts, clock-in coordinates, viáticos and audit trail — verified by
+    impersonating an employee's JWT, not inferred from the policies. The UI
+    never showed it; it was reachable only by querying PostgREST with the anon
+    key, which is exactly why it survived two hardening passes. **The rate lives
+    in four places and locking one is cosmetic**: the override on
+    `employee_profiles`, the inherited rate on `positions` (where it lives for
+    anyone invited into a rol — this was the widest hole, the whole rate card),
+    the per-shift snapshot on `time_entries`, and
+    `effective_employee_profile()`, which is `SECURITY DEFINER` and so returns
+    the rate **regardless of any table policy** — it was gated only by
+    `is_group_member`. Every policy is now `employer or owner`. The **owner**
+    half is load-bearing: employer-only would silently blank the employee's own
+    clock card, recent shifts and comprobante, because 0020's payments policy
+    reaches into `employee_profiles` through an inline subquery.
+    GPS needed no column work — the coordinates simply live on rows a colleague
+    can no longer see. Column GRANTs were not an option anyway: employer and
+    employee share the one `authenticated` Postgres role.
+    ⚠️ The members list showed a "Trabajando" badge and job title by reading
+    **coworkers'** profiles and open shifts, for both roles. That is why 0020
+    and 0023 both deferred this. `group_members_overview(group_id)` replaces it,
+    returning `member_id / position_name / is_working` and nothing else. Adding
+    a compensation column to it would reopen the hole through the front door.
+    ⚠️ `revoke ... from public` does **not** strip `anon` or `authenticated` —
+    Supabase grants EXECUTE to them explicitly. Name all three, then re-grant to
+    `authenticated`. This bit `record_shift_edit` twice (0023 then 0024), and
+    `change_employee_rate` and `employer_delete_entries` shipped anon-callable
+    for the same reason; 0028 fixes both.
 
 ## Repository layout
 
@@ -329,7 +358,8 @@ HourCounter/
 │       ├── 0024_revoke_record_shift_edit_public.sql  completes 0023 (revoke record_shift_edit from PUBLIC)
 │       ├── 0025_retroactive_rates.sql       time_entries.hourly_rate snapshot (per-shift frozen rate) + change_employee_rate(profile,new_rate,effective_from) + calculate_pay_draft values hours per-shift with mixed_rates flag
 │       ├── 0026_manual_entries.sql          time_entries.concept enum + created_by (NULL = clocked, set = employer typed it) + employer_create_entry / employer_delete_entry + calculate_pay_draft MERGED with 0025 (per-shift rates AND concept-aware day counting) + by_concept breakdown
-│       └── 0027_delete_shifts.sql          lets employers delete clocked shifts (0026 only allowed manual ones), blocked for anything inside a recorded payment (SHIFT_ALREADY_PAID) + employer_delete_entries(uuid[]) for batches; shift_edits.shift_id now nullable on delete set null so the 'deleted' audit row survives
+│       ├── 0027_delete_shifts.sql          lets employers delete clocked shifts (0026 only allowed manual ones), blocked for anything inside a recorded payment (SHIFT_ALREADY_PAID) + employer_delete_entries(uuid[]) for batches; shift_edits.shift_id now nullable on delete set null so the 'deleted' audit row survives
+│       └── 0028_compensation_privacy.sql  an employee can no longer read a colleague's pay: employee_profiles / fixed_amounts / time_entries / shift_edits SELECT narrowed to employer-or-owner, positions + position_fixed_amounts to employer only (the inherited rate lived there), effective_employee_profile() re-gated (SECURITY DEFINER, it bypassed every table policy) + group_members_overview() so the members list keeps its "Trabajando" badge without reading coworkers' profiles
 ├── .env.local                      Supabase URL + anon key (gitignored)
 ├── .env.local.example              template
 ├── package.json
