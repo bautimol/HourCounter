@@ -2,6 +2,35 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 /**
+ * Paths reachable without a session. Everything else redirects to /login.
+ *
+ * Password recovery is here because someone who cannot log in is by definition
+ * without a session, so guarding those two would send them to the very screen
+ * they are stuck on. `/reset-password` counts even though it normally does
+ * have a session by the time it renders: a dead link arrives without one and
+ * has to be able to say so instead of bouncing.
+ *
+ * The public content pages are here for the plainer reason that a footer link
+ * to the privacy policy has to work for someone who has never signed up.
+ *
+ * Brand assets (icon*, apple-icon, manifest, sw.js) are deliberately NOT on
+ * this list: the matcher in src/proxy.ts excludes them outright, so this
+ * function never runs for them and a favicon fetch costs no getUser().
+ */
+const PUBLIC_PREFIXES = [
+  "/login",
+  "/signup",
+  "/auth",
+  "/invite",
+  "/forgot-password",
+  "/reset-password",
+  "/faq",
+  "/soporte",
+  "/terminos",
+  "/privacidad",
+];
+
+/**
  * Refreshes the Supabase auth session on every request.
  * Called from the root proxy.ts (formerly middleware.ts in Next.js 15 and earlier).
  */
@@ -38,21 +67,7 @@ export async function updateSession(request: NextRequest) {
   // Redirect unauthenticated users to /login, except on auth pages.
   const pathname = request.nextUrl.pathname;
   const isPublicPath =
-    pathname.startsWith("/login") ||
-    pathname.startsWith("/signup") ||
-    pathname.startsWith("/auth") ||
-    pathname.startsWith("/invite") ||
-    // Password recovery. Someone who cannot log in is by definition without a
-    // session, so guarding these would send them to /login — the screen they
-    // are stuck on. /reset-password is included even though it normally does
-    // have a session by the time it renders: a dead link arrives without one,
-    // and it has to be able to say so instead of bouncing.
-    pathname.startsWith("/forgot-password") ||
-    pathname.startsWith("/reset-password") ||
-    // Brand assets (icon*, apple-icon, manifest, sw.js) are not listed here on
-    // purpose: the matcher in src/proxy.ts excludes them outright, so this
-    // function never runs for them and a favicon fetch costs no getUser().
-    pathname === "/";
+    pathname === "/" || PUBLIC_PREFIXES.some((p) => pathname.startsWith(p));
 
   if (!user && !isPublicPath) {
     const url = request.nextUrl.clone();

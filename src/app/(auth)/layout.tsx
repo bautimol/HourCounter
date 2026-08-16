@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AuthHero } from "./auth-hero";
 import { Logo } from "@/components/logo";
+import { Footer } from "@/components/footer";
 
 export default function AuthLayout({
   children,
@@ -26,6 +27,13 @@ export default function AuthLayout({
 
         <div className="flex flex-1 items-center justify-center">
           <div className="w-full max-w-sm">{children}</div>
+        </div>
+
+        {/* Compact: a four-column footer under a login form would outweigh the
+            form. Constrained to the same measure as the form so it reads as
+            part of the column and not as page furniture. */}
+        <div className="mx-auto mt-10 w-full max-w-sm">
+          <Footer variant="compact" />
         </div>
       </div>
 

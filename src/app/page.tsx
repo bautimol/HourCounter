@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { LandingNavbar } from "@/components/landing/landing-navbar";
 import { Marquee3D } from "@/components/landing/marquee-3d";
 import { FeaturesGrid } from "@/components/landing/features-grid";
+import { Footer } from "@/components/footer";
 
 export default async function LandingPage() {
   // Logged-in users go straight to the app — they don't need the pitch.
@@ -135,12 +136,7 @@ export default async function LandingPage() {
           </div>
         </section>
 
-        {/* Footer */}
-        <footer className="mx-auto max-w-6xl px-4 pb-10">
-          <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-8 text-sm text-muted-foreground">
-            <p>© {new Date().getFullYear()} Clockity</p>
-          </div>
-        </footer>
+        <Footer />
       </main>
     </div>
   );

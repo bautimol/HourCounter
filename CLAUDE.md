@@ -212,6 +212,23 @@ read policy (which lets every member see profile scalars).
     The reset mail deliberately does not carry `next`: Supabase only honours a
     `redirectTo` that matches its allowlist exactly, so the URL is fixed and
     the destination is always `/reset-password`.
+19. **The public content pages exist so the footer can be honest.** `/faq`,
+    `/soporte`, `/terminos` and `/privacidad` live in the `(public)` route
+    group (navbar + full footer, no URL segment) and are listed in
+    `PUBLIC_PREFIXES`. A footer link to the privacy policy has to work for
+    someone who never signed up, so every one of them is reachable logged out.
+    Two things they say are load-bearing rather than boilerplate, and should
+    not be softened without changing the product first: **Clockity is not a
+    payroll record** — it registers nothing with ARCA, is not a recibo de
+    sueldo and does not check any rate against a convenio, which matters
+    because the target market is informal work; and the privacy page discloses
+    the two facts a user would otherwise discover at the worst moment, namely
+    that clock-in coordinates are stored when the employer enables the
+    geofence, and that the employer's notes about an employee are invisible to
+    that employee.
+    ⚠️ `SUPPORT_EMAIL` in `src/lib/support.ts` is the single place contact
+    details live, and it must be a mailbox someone reads. A support link that
+    bounces is worse than none: the person believes they asked for help.
 
 ## Repository layout
 
@@ -365,6 +382,8 @@ HourCounter/
 | Archive employee                            | ⏳ schema OK, UI pending |
 | Generated TypeScript types from schema      | ⏳ pending     |
 | Marketing landing at `/` (3D marquee, hero, features) | ✅ done |
+| Footer público + /faq + /soporte + /terminos + /privacidad | ✅ done |
+| About us                                    | ⏳ falta contenido |
 
 ## Conventions
 
