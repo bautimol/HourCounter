@@ -223,11 +223,12 @@ function Group({ title, items }: { title: string; items: Item[] }) {
                 aria-hidden
               />
             </summary>
-            {/* pb-4, not pb-5, so the gap under the answer matches the one the
-                summary's py-4 leaves above it — the answer has no padding of
-                its own up there. One value for the whole accordion also means
-                an open row keeps the same rhythm as a closed one. */}
-            <div className="px-5 pb-4 text-sm leading-relaxed text-muted-foreground">
+            {/* py-4, symmetric. The summary's own py-4 is INSIDE its hover
+                highlight, so it is not a gap: with no padding-top here the
+                answer sat flush against the highlight's bottom edge while
+                still clearing the row border below it. The answer needs its
+                own padding on both sides to sit centred between the two. */}
+            <div className="px-5 py-4 text-sm leading-relaxed text-muted-foreground">
               {item.a}
             </div>
           </details>
