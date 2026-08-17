@@ -96,7 +96,9 @@ export default function PrivacidadPage() {
                 exacto de fichar, el navegador pide permiso y se guardan las
                 coordenadas de ese instante junto con si estaban dentro del
                 radio que el empleador definió. El teléfono siempre pide
-                permiso: si lo negás, no se guarda nada.
+                permiso. Si lo negás no se guarda ninguna coordenada, pero el
+                turno queda marcado como «fichado sin ubicación» para que tu
+                empleador lo revise.
               </p>
               <p>
                 Esa coordenada queda asociada a ese turno y la ve el empleador

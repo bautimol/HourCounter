@@ -19,7 +19,7 @@ type Item = { q: string; a: React.ReactNode };
 
 const EMPLEADO: Item[] = [
   {
-    q: "¿Cómo fichó mi entrada y mi salida?",
+    q: "¿Cómo ficho mi entrada y mi salida?",
     a: (
       <>
         Entrás a tu grupo y tocás el botón grande de fichar. El cronómetro
@@ -157,7 +157,9 @@ const EMPLEADOR: Item[] = [
         Horas aprobadas por el valor de la hora de cada empleado, más los
         montos fijos que hayas configurado (viáticos, bonos), más o menos los
         ajustes que agregues en el momento. Antes de confirmar ves el desglose
-        completo, y una vez registrado el pago queda inmutable.
+        completo. El total lo recalcula el servidor en ese momento, así que no
+        depende de lo que muestre la pantalla, y una vez registrado no se puede
+        editar. Si algo salió mal, el pago se elimina y se registra de nuevo.
       </>
     ),
   },
