@@ -13,7 +13,7 @@
 export const SUPPORT_EMAIL = "soporte@clockity.app";
 
 /** Shown on the legal pages. Bump it when the text below them changes. */
-export const LEGAL_LAST_UPDATED = "15 de agosto de 2026";
+export const LEGAL_LAST_UPDATED = "17 de agosto de 2026";
 
 /**
  * A mailto with the subject filled in.
