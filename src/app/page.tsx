@@ -50,7 +50,7 @@ export default async function LandingPage() {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-60" />
                 <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
               </span>
-              En construcción · v0
+              En construcción · v0.1
             </span>
             <h1 className="mt-6 text-balance text-5xl font-semibold leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl">
               Trackeá horas.
@@ -64,7 +64,7 @@ export default async function LandingPage() {
             <p className="mx-auto mt-6 max-w-xl text-balance text-base text-muted-foreground sm:text-lg">
               Dashboard para empleadores que pagan por hora. Roles
               configurables, clock in / out con cronómetro, multi-empleador,
-              y la cuenta lista al momento de pagar.
+              y la liquidación lista al momento de pagar.
             </p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
               <Link
