@@ -5,9 +5,8 @@ import { PageShell, List } from "../page-shell";
 
 export const metadata: Metadata = {
   title: "Sobre nosotros · Clockity",
-  // TODO: reescribir cuando esté el contenido. Se usa en el buscador y en el
-  // preview de WhatsApp, así que conviene que diga quiénes somos, no qué hace
-  // la app — eso ya lo dice el landing.
+  // Shown in search results and in the WhatsApp link preview, so it says who
+  // we are rather than what the app does — the landing already covers that.
   description:
     "Quiénes hacemos Clockity, por qué lo construimos y cómo se sostiene.",
 };
@@ -25,32 +24,27 @@ export const metadata: Metadata = {
  * for numbered legal clauses, and this page should not read like the terms.
  * It does reuse `PageShell` so the measure and the heading rhythm line up with
  * /faq, /soporte, /terminos and /privacidad.
- *
- * ⚠️ TODO — every string marked below is placeholder. Do not merge to main
- * with this copy: a Sobre nosotros full of lorem is worse than no page.
  */
 
 /**
- * Fill in. No avatars here by choice: for two people, a name and a plain line
- * about what they do carries the page, and initial-circles would read as a
- * team page pretending to be bigger than it is.
+ * No avatars by choice: for two people, a name and a plain line about what they
+ * do carries the page, and initial-circles would read as a team page pretending
+ * to be bigger than the team.
  */
 const PEOPLE: { name: string; role: string; blurb: string }[] = [
-    {
-      // TODO
-      name: "Nombre Apellido",
-      role: "Producto y desarrollo",
-      blurb:
-        "Una línea sobre qué hace acá y de dónde viene. Sin cargos inflados: " +
-        "en un equipo de dos, «CEO» resta más de lo que suma.",
-    },
-    {
-      // TODO
-      name: "Nombre Apellido",
-      role: "Desarrollo",
-      blurb: "Ídem — concreto y corto, dos renglones alcanzan.",
-    },
-  ];
+  {
+    name: "Bautista Molina",
+    role: "Producto y desarrollo",
+    blurb:
+      "Estudiante de Ingeniería Informática en el Instituto Tecnológico de Buenos Aires.",
+  },
+  {
+    name: "Juan Cruz Rey Labrador",
+    role: "Desarrollo",
+    blurb:
+      "Estudiante de Ingeniería Informática en la Universidad de Buenos Aires.",
+  },
+];
 
 function Block({
   title,
@@ -75,30 +69,22 @@ export default function NosotrosPage() {
   return (
     <PageShell
       title="Sobre nosotros"
-      // TODO: una frase. Qué son y para quién, no un eslogan.
-      intro="Somos dos personas construyendo una herramienta para los locales que llevan las horas en un cuaderno."
+      intro="Dos personas construyendo una herramienta para los locales que llevan las horas en un cuaderno."
     >
       <Block title="Por qué existe Clockity">
-        {/* TODO: 2 párrafos. El problema concreto que los llevó a construirlo.
-            Si salió de un local real, de un familiar, de haber llevado horas a
-            mano — contá eso. Es la única sección donde una anécdota verdadera
-            gana por goleada. Evitá «nuestra misión es»: contá la situación y
-            la misión se entiende sola. */}
         <p>
-          Placeholder — el problema concreto que dio origen a la app. Qué se
-          hacía antes, qué salía mal y para quién.
+          El proyecto surge de un problema con el recuento de horas de una
+          empleada doméstica. El conteo se hacía a mano y por mensajes de texto,
+          entonces para facilitar y agilizar el proceso decidimos crear esta
+          aplicación.
         </p>
         <p>
-          Placeholder — por qué las herramientas que ya existían no servían para
-          este caso.
+          El uso de Excel y cuadernos ayudaba, pero no optimizaba del todo el
+          recuento, y además nunca era tan preciso como un cronómetro.
         </p>
       </Block>
 
       <Block title="Quiénes somos">
-        <p>
-          {/* TODO: una línea de contexto antes de las fichas, opcional. */}
-          Placeholder — dónde están, desde cuándo trabajan en esto.
-        </p>
         <ul className="mt-5 grid gap-4 sm:grid-cols-2">
           {PEOPLE.map((p) => (
             <li
@@ -118,56 +104,39 @@ export default function NosotrosPage() {
       </Block>
 
       <Block title="Para quién es">
-        {/* TODO: ajustar. Esta sección es la que más confianza construye, y es
-            el mismo movimiento que «Qué NO es Clockity» en los términos:
-            acotar gana más de lo que pierde. */}
-        <List
-          items={[
-            <>Placeholder — el tamaño y tipo de local al que le sirve.</>,
-            <>Placeholder — la situación típica que resuelve.</>,
-            <>Placeholder — qué necesita tener quien lo usa.</>,
-          ]}
-        />
-      </Block>
-
-      <Block title="Para quién no">
         <List
           items={[
             <>
-              Placeholder — el caso que explícitamente no cubre. Si tenés RRHH y
-              liquidás por convenio, esto no te sirve, y conviene decirlo acá.
+              Está dirigida a locales o empleadores que le pagan por hora a su
+              gente.
             </>,
             <>
-              Placeholder — enganchá con{" "}
-              <Link
-                href="/terminos"
-                className="font-medium text-foreground underline underline-offset-4"
-              >
-                los términos
-              </Link>
-              , que ya detallan qué no es la app.
+              Resuelve el conteo manual de horas para armar el comprobante de
+              pago del empleado.
+            </>,
+            <>
+              Solo hace falta un celular o una computadora por persona. Los
+              teléfonos personales que ya tienen alcanzan de sobra.
             </>,
           ]}
         />
       </Block>
 
       <Block title="Cómo se sostiene">
-        {/* TODO: 1 párrafo. La sección que casi nadie pone y que en una app de
-            sueldos es la que más importa: ¿es gratis? ¿van a vender mis datos?
-            Aunque hoy la respuesta sea «es gratis y todavía estamos definiendo
-            el precio», decirlo gana más de lo que pierde. */}
         <p>
-          Placeholder — cómo se financia hoy y qué se piensa cobrar. Si todavía
-          no está definido, decilo: la incertidumbre declarada construye más
-          confianza que el silencio.
+          Hoy en día el proyecto lo financiamos nosotros, los desarrolladores.
+          Más adelante el servicio va a cobrarse por mes, con un costo que
+          dependerá del plan que necesite cada uno.
         </p>
         <p>
-          Placeholder — qué NO se hace con los datos, enlazando a{" "}
+          Los datos que cargan los usuarios no se comercializan bajo ningún
+          concepto. Si querés leer con más detalle qué hacemos con ellos, entrá
+          a nuestra{" "}
           <Link
             href="/privacidad"
             className="font-medium text-foreground underline underline-offset-4"
           >
-            la política de privacidad
+            política de privacidad
           </Link>
           .
         </p>
