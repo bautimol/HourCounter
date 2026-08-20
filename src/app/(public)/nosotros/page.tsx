@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Mail } from "lucide-react";
 import { PageShell, List } from "../page-shell";
-import { Avatar } from "@/components/ui/avatar";
 
 export const metadata: Metadata = {
   title: "Sobre nosotros · Clockity",
@@ -31,9 +30,12 @@ export const metadata: Metadata = {
  * with this copy: a Sobre nosotros full of lorem is worse than no page.
  */
 
-/** Fill in. `Avatar` falls back to initials, so photos are optional. */
-const PEOPLE: { name: string; role: string; blurb: string; avatarUrl?: string }[] =
-  [
+/**
+ * Fill in. No avatars here by choice: for two people, a name and a plain line
+ * about what they do carries the page, and initial-circles would read as a
+ * team page pretending to be bigger than it is.
+ */
+const PEOPLE: { name: string; role: string; blurb: string }[] = [
     {
       // TODO
       name: "Nombre Apellido",
@@ -103,17 +105,10 @@ export default function NosotrosPage() {
               key={p.name}
               className="rounded-xl border border-border bg-surface p-5"
             >
-              <div className="flex items-center gap-3">
-                <Avatar name={p.name} src={p.avatarUrl} size="lg" />
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-foreground">
-                    {p.name}
-                  </p>
-                  <p className="truncate text-xs text-muted-foreground">
-                    {p.role}
-                  </p>
-                </div>
-              </div>
+              <p className="text-sm font-medium text-foreground">{p.name}</p>
+              <p className="mt-0.5 text-xs uppercase tracking-wider text-muted-foreground">
+                {p.role}
+              </p>
               <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
                 {p.blurb}
               </p>
