@@ -126,7 +126,7 @@ export default function NosotrosPage() {
         <p>
           Hoy en día el proyecto lo financiamos nosotros, los desarrolladores.
           Más adelante el servicio va a cobrarse por mes, con un costo que
-          dependerá del plan que necesite cada uno.
+          dependerá del plan que necesite cada uno, los precios no están definidos todavía.
         </p>
         <p>
           Los datos que cargan los usuarios no se comercializan bajo ningún
