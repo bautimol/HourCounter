@@ -198,6 +198,69 @@ read policy (which lets every member see profile scalars).
     notified. It now runs inside `after()` from `next/server`, which
     fires once the response is sent. Server Functions may use request
     APIs inside `after`, so the Supabase client keeps working there.
+18. **Password recovery is authorised by a session, not by a token in a
+    form.** `/auth/reset` consumes the emailed link — `token_hash` +
+    `verifyOtp({type:'recovery'})`, or `code` + `exchangeCodeForSession`,
+    because which one arrives depends on the dashboard's email template — and
+    that leaves a real session in the cookie. `/reset-password` then calls
+    `updateUser({password})` against it. So an expired or reused link fails
+    with no one to act as, instead of the form having to prove anything.
+    Both recovery screens are **public in the proxy**: guarding them sends the
+    person who cannot log in to `/login`, which is the screen they are stuck
+    on. Landing on `/reset-password` with no session is a normal outcome and
+    renders "ese link ya no sirve" plus a way to ask for another.
+    The reset mail deliberately does not carry `next`: Supabase only honours a
+    `redirectTo` that matches its allowlist exactly, so the URL is fixed and
+    the destination is always `/reset-password`.
+19. **The public content pages exist so the footer can be honest.** `/faq`,
+    `/soporte`, `/terminos` and `/privacidad` live in the `(public)` route
+    group (navbar + full footer, no URL segment) and are listed in
+    `PUBLIC_PREFIXES`. A footer link to the privacy policy has to work for
+    someone who never signed up, so every one of them is reachable logged out.
+    Two things they say are load-bearing rather than boilerplate, and should
+    not be softened without changing the product first: **Clockity is not a
+    payroll record** — it registers nothing with ARCA, is not a recibo de
+    sueldo and does not check any rate against a convenio, which matters
+    because the target market is informal work; and the privacy page discloses
+    the two facts a user would otherwise discover at the worst moment, namely
+    that clock-in coordinates are stored when the employer enables the
+    geofence, and that the employer's notes about an employee are invisible to
+    that employee.
+    `SUPPORT_EMAIL` in `src/lib/support.ts` is the single place contact details
+    live — footer, FAQ, both legal pages and the support screen read from it.
+    `soporte@clockity.app` is a real mailbox (the domain's MX points at Google
+    Workspace), so it is not a placeholder to be swapped out. Whatever it
+    points at has to stay a mailbox someone reads: a support link that bounces
+    is worse than none, because the person believes they asked for help.
+20. **What a colleague earns is not group-readable** (0028). Until this
+    migration any active member could read every coworker's `hourly_rate`,
+    shifts, clock-in coordinates, viáticos and audit trail — verified by
+    impersonating an employee's JWT, not inferred from the policies. The UI
+    never showed it; it was reachable only by querying PostgREST with the anon
+    key, which is exactly why it survived two hardening passes. **The rate lives
+    in four places and locking one is cosmetic**: the override on
+    `employee_profiles`, the inherited rate on `positions` (where it lives for
+    anyone invited into a rol — this was the widest hole, the whole rate card),
+    the per-shift snapshot on `time_entries`, and
+    `effective_employee_profile()`, which is `SECURITY DEFINER` and so returns
+    the rate **regardless of any table policy** — it was gated only by
+    `is_group_member`. Every policy is now `employer or owner`. The **owner**
+    half is load-bearing: employer-only would silently blank the employee's own
+    clock card, recent shifts and comprobante, because 0020's payments policy
+    reaches into `employee_profiles` through an inline subquery.
+    GPS needed no column work — the coordinates simply live on rows a colleague
+    can no longer see. Column GRANTs were not an option anyway: employer and
+    employee share the one `authenticated` Postgres role.
+    ⚠️ The members list showed a "Trabajando" badge and job title by reading
+    **coworkers'** profiles and open shifts, for both roles. That is why 0020
+    and 0023 both deferred this. `group_members_overview(group_id)` replaces it,
+    returning `member_id / position_name / is_working` and nothing else. Adding
+    a compensation column to it would reopen the hole through the front door.
+    ⚠️ `revoke ... from public` does **not** strip `anon` or `authenticated` —
+    Supabase grants EXECUTE to them explicitly. Name all three, then re-grant to
+    `authenticated`. This bit `record_shift_edit` twice (0023 then 0024), and
+    `change_employee_rate` and `employer_delete_entries` shipped anon-callable
+    for the same reason; 0028 fixes both.
 
 ## Repository layout
 
@@ -298,7 +361,8 @@ HourCounter/
 │       ├── 0024_revoke_record_shift_edit_public.sql  completes 0023 (revoke record_shift_edit from PUBLIC)
 │       ├── 0025_retroactive_rates.sql       time_entries.hourly_rate snapshot (per-shift frozen rate) + change_employee_rate(profile,new_rate,effective_from) + calculate_pay_draft values hours per-shift with mixed_rates flag
 │       ├── 0026_manual_entries.sql          time_entries.concept enum + created_by (NULL = clocked, set = employer typed it) + employer_create_entry / employer_delete_entry + calculate_pay_draft MERGED with 0025 (per-shift rates AND concept-aware day counting) + by_concept breakdown
-│       └── 0027_delete_shifts.sql          lets employers delete clocked shifts (0026 only allowed manual ones), blocked for anything inside a recorded payment (SHIFT_ALREADY_PAID) + employer_delete_entries(uuid[]) for batches; shift_edits.shift_id now nullable on delete set null so the 'deleted' audit row survives
+│       ├── 0027_delete_shifts.sql          lets employers delete clocked shifts (0026 only allowed manual ones), blocked for anything inside a recorded payment (SHIFT_ALREADY_PAID) + employer_delete_entries(uuid[]) for batches; shift_edits.shift_id now nullable on delete set null so the 'deleted' audit row survives
+│       └── 0028_compensation_privacy.sql  an employee can no longer read a colleague's pay: employee_profiles / fixed_amounts / time_entries / shift_edits SELECT narrowed to employer-or-owner, positions + position_fixed_amounts to employer only (the inherited rate lived there), effective_employee_profile() re-gated (SECURITY DEFINER, it bypassed every table policy) + group_members_overview() so the members list keeps its "Trabajando" badge without reading coworkers' profiles
 ├── .env.local                      Supabase URL + anon key (gitignored)
 ├── .env.local.example              template
 ├── package.json
@@ -312,6 +376,7 @@ HourCounter/
 | Email/password signup + login               | ✅ done        |
 | Google sign-in (OAuth, PKCE via /auth/callback) | ✅ done    |
 | Email confirmation flow                     | ✅ done        |
+| Recuperar contraseña (link por mail)        | ✅ done        |
 | Signout                                     | ✅ done        |
 | Create / list groups                        | ✅ done        |
 | Group detail + members                      | ✅ done        |
@@ -350,6 +415,8 @@ HourCounter/
 | Archive employee                            | ⏳ schema OK, UI pending |
 | Generated TypeScript types from schema      | ⏳ pending     |
 | Marketing landing at `/` (3D marquee, hero, features) | ✅ done |
+| Footer público + /faq + /soporte + /terminos + /privacidad | ✅ done |
+| About us                                    | ⏳ falta contenido |
 
 ## Conventions
 
@@ -396,6 +463,10 @@ HourCounter/
   numbered sequentially. Apply manually via Supabase SQL Editor (no
   Supabase CLI configured yet). After each migration, verify with the
   user before relying on it.
+- **Branching**: work goes to `development`. `main` is protected and
+  only takes pull requests — a direct push is rejected with "Changes must
+  be made through a pull request", so `main` is reached by merging
+  `development` into it, never by pushing.
 
 ## Setup for a fresh checkout
 
@@ -408,8 +479,9 @@ npm run dev                            # http://localhost:3000
 Supabase config required:
 - Auth → URL Configuration:
   - Site URL: `http://localhost:3000`
-  - Redirect URLs: `http://localhost:3000/auth/confirm` and
-    `http://localhost:3000/auth/callback`
+  - Redirect URLs: `http://localhost:3000/auth/confirm`,
+    `http://localhost:3000/auth/callback` and
+    `http://localhost:3000/auth/reset`
 - (Optional for dev) Auth → Providers → Email: disable "Confirm email".
 
 For Google sign-in (dashboard-only, no migration):
@@ -469,8 +541,12 @@ Steps for the first deploy:
 6. **Deploy**. You get `your-project.vercel.app`.
 7. **Update Supabase** → Auth → URL Configuration:
    - Site URL: `https://your-project.vercel.app`
-   - Redirect URLs: add `https://your-project.vercel.app/auth/confirm`
-     and `https://your-project.vercel.app/auth/callback`
+   - Redirect URLs: add `https://your-project.vercel.app/auth/confirm`,
+     `https://your-project.vercel.app/auth/callback` and
+     `https://your-project.vercel.app/auth/reset` — the last one is what the
+     password-recovery mail comes back to, and Supabase silently falls back to
+     the Site URL when a `redirectTo` is not on this list, so a missing entry
+     shows up as "el link me deja en la home" rather than as an error.
    (Keep the localhost ones too for dev.)
    Also add the prod origin to the Google OAuth client's authorized
    JavaScript origins, or Google sign-in works locally but not in prod.
@@ -496,7 +572,7 @@ Anything that hardcodes a host has to move together:
 |-------|-------|
 | Vercel env | `NEXT_PUBLIC_SITE_URL=https://clockity.app` |
 | Supabase → URL Configuration | Site URL `https://clockity.app` |
-| Supabase → Redirect URLs | `https://clockity.app/auth/callback`, `.../auth/confirm` |
+| Supabase → Redirect URLs | `https://clockity.app/auth/callback`, `.../auth/confirm`, `.../auth/reset` |
 | Google Cloud → OAuth client | Authorized JS origin `https://clockity.app` |
 
 The Google client's *redirect URI* stays pointed at Supabase
@@ -508,6 +584,75 @@ Email templates reference `{{ .SiteURL }}` rather than a literal host, so
 they follow the Site URL setting on their own.
 
 After every push to `main`, Vercel auto-deploys.
+
+## Email
+
+Auth mail goes out through **Resend**, from **`Clockity <confirmations@clockity.app>`**.
+
+### Why custom SMTP was mandatory, not cosmetic
+
+Supabase's built-in sender is not a weaker version of a real one — it
+**refuses to deliver to any address that is not a member of the project's
+organization**, answering *"Email address not authorized"*. Every real signup
+and every password reset for anyone outside the team silently never arrived.
+It also caps the whole project at a couple of messages per hour and the docs
+say plainly it is for development only.
+
+This is invisible in testing, because you test with your own address, which
+is on the team. Do not move the project to another Supabase org, or reuse
+this setup elsewhere, without configuring SMTP first.
+
+### DNS, and why the two mail systems do not collide
+
+Google Workspace holds the **root** of `clockity.app` and receives; Resend
+sends from the **`send.` subdomain**. That split is the whole trick — the
+root `MX` is untouched, so the existing mailboxes keep working.
+
+Verified live:
+
+| Record | Name | Value |
+|--------|------|-------|
+| `MX` | `send` | `feedback-smtp.sa-east-1.amazonses.com` |
+| `TXT` | `send` | `v=spf1 include:amazonses.com ~all` |
+| `TXT` | `resend._domainkey` | DKIM key (from Resend) |
+| `TXT` | `_dmarc` | `v=DMARC1; p=none; rua=mailto:soporte@clockity.app` |
+| `TXT` | `@` | `v=spf1 include:_spf.google.com ~all` |
+| `MX` | `@` | `smtp.google.com` — Workspace, pre-existing |
+
+DNS is at **Vercel** (`ns1.vercel-dns.com`), not at a registrar panel.
+Resend's region is `sa-east-1`, next to the database and the users.
+
+DMARC is at `p=none` — reporting only, enforcing nothing. Read a few weeks
+of `rua` reports before tightening to `p=quarantine`, or legitimate mail
+starts disappearing.
+
+### Supabase settings
+
+Project Settings → Authentication → SMTP: host `smtp.resend.com`, port `465`,
+username the literal string **`resend`** (not an address — the usual mistake),
+password a Resend API key.
+
+**Raise the send rate limit by hand** in Authentication → Rate Limits.
+Configuring SMTP does not lift the built-in cap on its own, and leaving it is
+how you end up rate-limited on your own provider.
+
+### Templates
+
+`supabase/email-templates/` — kept in the repo because the dashboard gives
+them no history, no review, and loses them if the project is recreated. That
+directory's README carries the email-specific constraints (tables, inline
+styles, button padding on the `<td>`, no SVG) and the reason behind each.
+
+### Open
+
+- `confirmations@clockity.app` should exist as a **Workspace alias** so
+  replies land somewhere. It only sends today; the root MX is Google, so a
+  reply to a non-existent address bounces. Aliases are free.
+- **A sender avatar was considered and dropped.** The Gmail circle is BIMI,
+  and Gmail honours it only with a VMC — roughly USD 1,000+/year and a
+  registered trademark. Revisit if the brand is ever registered. The free
+  thing worth trying first is a Workspace profile photo on the account that
+  owns the alias.
 
 ## Things to know about Next.js 16 in this repo
 
@@ -538,7 +683,8 @@ End-to-end loop closed (2026-05-06): invite → clock → verify → pay
 ### Monetization track (in parallel — gates "vendible")
 
 See "Path to monetization" section. Pricing decision, MercadoPago
-integration, /legal pages, custom domain + Sentry/Resend/PostHog.
+integration, /legal pages, Sentry/PostHog. The custom domain and
+transactional email are done — see "Production" and "Email".
 This track requires business decisions the owner needs to make
 (precio/empleado, plan free, ToS) — engineering can't unilaterally
 move it forward.
@@ -591,10 +737,10 @@ portfolio piece":
   hardest and most decisive piece for AR product viability.
 - **Pricing page + /legal**: terms, privacy, basic ToS. Required
   before any paid customer (and for trust signal even on free).
-- **Soft launch infra**: clockity.app is live; still pending Sentry
-  for prod errors, Resend for transactional email (Supabase
-  default lands in spam), PostHog free tier for funnel analytics,
-  Supabase backup policy.
+- **Soft launch infra**: clockity.app is live and transactional email
+  runs through Resend (see "Email"). Still pending: Sentry for prod
+  errors, PostHog free tier for funnel analytics, Supabase backup
+  policy.
 - **Onboarding plantilla** "Mi primer local en 2 minutos": pre-load
   a group with 2 typical AR roles (Cajero/Cocinero) and a generated
   invite link, so the dueño doesn't face a blank slate.

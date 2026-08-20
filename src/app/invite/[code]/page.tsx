@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { AcceptInvitationButton } from "./accept-button";
 import { Logo } from "@/components/logo";
+import { Footer } from "@/components/footer";
 
 type Invitation = {
   id: string;
@@ -84,6 +85,12 @@ export default async function InviteLandingPage({
         ) : (
           <ValidInviteCard invitation={inv} code={code} loggedIn={!!user} />
         )}
+
+        {/* For many employees this page is the first thing they ever see of
+            Clockity — usually a link forwarded by their employer. Somewhere to
+            read what this is and who is behind it belongs here more than
+            anywhere else in the app. */}
+        <Footer variant="compact" className="justify-center" />
       </div>
     </div>
   );

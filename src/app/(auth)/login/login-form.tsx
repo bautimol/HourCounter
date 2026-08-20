@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import Link from "next/link";
 import { loginAction, type AuthState } from "./actions";
 import { SubmitButton } from "@/components/submit-button";
 import { AuthDivider, GoogleButton } from "../google-button";
@@ -33,7 +34,17 @@ export function LoginForm({ next }: { next?: string }) {
         </Field>
 
         <Field>
-          <Label htmlFor="password">Contraseña</Label>
+          <div className="flex items-baseline justify-between gap-3">
+            <Label htmlFor="password">Contraseña</Label>
+            {/* Next to the field it belongs to, not buried under the form:
+                someone who cannot get in should not have to hunt for this. */}
+            <Link
+              href="/forgot-password"
+              className="text-xs font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+            >
+              ¿La olvidaste?
+            </Link>
+          </div>
           <Input
             id="password"
             name="password"

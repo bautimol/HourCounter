@@ -16,6 +16,14 @@ of truth is kept here and pasted in.
 | File | Template | Subject |
 |------|----------|---------|
 | `confirm-signup.html` | Confirm signup | `Confirmá tu cuenta en Clockity` |
+| `reset-password.html` | Reset password | `Cambiá tu contraseña de Clockity` |
+
+`reset-password.html` also needs `<origin>/auth/reset` in **Authentication →
+URL Configuration → Redirect URLs**. `{{ .ConfirmationURL }}` sends the user
+through Supabase's verify endpoint, which then bounces to the `redirectTo` the
+app asked for — and Supabase silently substitutes the Site URL when that value
+is not on the allowlist. The symptom is not an error: the link works, and drops
+the person on the home page instead of the form.
 
 ## Notes for editing these
 

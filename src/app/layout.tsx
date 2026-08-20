@@ -44,7 +44,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="es-AR"
       className={`${plusJakarta.variable} ${geistMono.variable} h-full antialiased`}
       // The theme script sets data-theme before React hydrates, so the server
       // HTML never carries the attribute and would otherwise mismatch.
