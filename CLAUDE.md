@@ -114,11 +114,33 @@ read policy (which lets every member see profile scalars).
 10. **Proxy** (`src/proxy.ts`): refreshes Supabase session on every
     request, redirects unauthenticated users to `/login?next=...`,
     public paths are `/`, `/login`, `/signup`, `/auth/*`, `/invite/*`.
-11. **Time tracking is lazy-close**. Open shifts past their declared
-    `expected_minutes` are closed by `auto_close_expired_shifts()`,
-    invoked at the top of any read that cares about shift state and
-    inside `clock_in` / `clock_out`. Avoids needing pg_cron and keeps
-    state self-healing without scheduled jobs.
+11. **Time tracking is lazy-close, against a per-group ceiling** (0029).
+    `auto_close_expired_shifts()` closes an open shift at `clock_in +
+    least(expected_minutes, groups.auto_close_after_minutes)`, invoked at
+    the top of any read that cares about shift state and inside
+    `clock_in` / `clock_out`. No pg_cron, self-healing without scheduled jobs.
+    ⚠️ Until 0029 the sweep required `expected_minutes is not null`, and that
+    field is **optional and almost never filled in** — 4 of 44 shifts had it.
+    So the net did not exist for 91% of shifts. One shift ran **120.8 h** in
+    production. The damage is not the long row: `one_open_shift_per_profile`
+    means an open shift **blocks that person's next clock-in**, so ~2.4 worked
+    hours were never recorded because the app kept refusing her.
+    `auto_close_after_minutes` defaults to 720 (12 h); NULL = no ceiling.
+    **NULL and not 0 is load-bearing**: `least()` ignores NULLs but not zeros,
+    so 0 would write `clock_out = clock_in`, violate the table check, and —
+    since the sweep is global and runs on ordinary reads — take down `/app`
+    for every user because one group opted out.
+    Who decided the cut sets the outcome: the ceiling → `needs_review` plus
+    `time_entries.auto_closed_at`; her own declaration → `closed`, unmarked.
+    That split matters because **today a forgotten shift pays zero** (no
+    `clock_out`), and a ceiling turns it into N payable hours nobody worked —
+    the ceiling moves the cost of the oversight from employee to employer. The
+    mark survives approval (`verify_shift` clears `needs_review`), which is
+    exactly when a dispute shows up. No `shift_edits` row is written: the sweep
+    runs under whatever session triggered it, so it would record employee A
+    closing employee B's shift.
+    ⚠️ The Turnos badge counts `closed` **and** `needs_review` for this reason —
+    counting only `closed` would hide the migration's own output.
 12. **Empty employee_profiles are valid**. The position-or-complete
     check was removed in 0009 so a member without a configured profile
     can clock in immediately. `clock_in` auto-creates the profile on
@@ -362,7 +384,8 @@ HourCounter/
 │       ├── 0025_retroactive_rates.sql       time_entries.hourly_rate snapshot (per-shift frozen rate) + change_employee_rate(profile,new_rate,effective_from) + calculate_pay_draft values hours per-shift with mixed_rates flag
 │       ├── 0026_manual_entries.sql          time_entries.concept enum + created_by (NULL = clocked, set = employer typed it) + employer_create_entry / employer_delete_entry + calculate_pay_draft MERGED with 0025 (per-shift rates AND concept-aware day counting) + by_concept breakdown
 │       ├── 0027_delete_shifts.sql          lets employers delete clocked shifts (0026 only allowed manual ones), blocked for anything inside a recorded payment (SHIFT_ALREADY_PAID) + employer_delete_entries(uuid[]) for batches; shift_edits.shift_id now nullable on delete set null so the 'deleted' audit row survives
-│       └── 0028_compensation_privacy.sql  an employee can no longer read a colleague's pay: employee_profiles / fixed_amounts / time_entries / shift_edits SELECT narrowed to employer-or-owner, positions + position_fixed_amounts to employer only (the inherited rate lived there), effective_employee_profile() re-gated (SECURITY DEFINER, it bypassed every table policy) + group_members_overview() so the members list keeps its "Trabajando" badge without reading coworkers' profiles
+│       ├── 0028_compensation_privacy.sql  an employee can no longer read a colleague's pay: employee_profiles / fixed_amounts / time_entries / shift_edits SELECT narrowed to employer-or-owner, positions + position_fixed_amounts to employer only (the inherited rate lived there), effective_employee_profile() re-gated (SECURITY DEFINER, it bypassed every table policy) + group_members_overview() so the members list keeps its "Trabajando" badge without reading coworkers' profiles
+│       └── 0029_auto_close_ceiling.sql  groups.auto_close_after_minutes (default 720 = 12 h, NULL = sin tope) + time_entries.auto_closed_at + auto_close_expired_shifts() recreated to sweep against least(declared, ceiling) — the old version required expected_minutes, which 91% of shifts leave NULL, so nothing was ever swept + update_group_auto_close() employer-gated
 ├── .env.local                      Supabase URL + anon key (gitignored)
 ├── .env.local.example              template
 ├── package.json

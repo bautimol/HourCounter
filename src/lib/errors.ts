@@ -71,6 +71,10 @@ const EXACT: Record<string, string> = {
   "position does not belong to this group": "Ese rol es de otro grupo.",
   "group name is required": "Poné un nombre para el grupo.",
 
+  // Cierre automático de turnos
+  "auto-close ceiling must be between 4 and 24 hours":
+    "El cierre automático tiene que estar entre 4 y 24 horas.",
+
   // Geofence
   "lat/lng/radius required when enabling geofence":
     "Para activar la ubicación hace falta marcar el lugar y el radio.",

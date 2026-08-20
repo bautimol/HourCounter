@@ -1,6 +1,12 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ClipboardCheck, MapPin, MapPinOff, ShieldCheck } from "lucide-react";
+import {
+  AlertTriangle,
+  ClipboardCheck,
+  MapPin,
+  MapPinOff,
+  ShieldCheck,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +34,7 @@ type ShiftRow = {
   clock_in: string;
   clock_out: string | null;
   status: "open" | "closed" | "needs_review";
+  auto_closed_at: string | null;
   notes: string | null;
   verified_at: string | null;
   verified_by: string | null;
@@ -76,6 +83,7 @@ export default async function ShiftReviewPage({
     .select(
       `id, clock_in, clock_out, status, notes, verified_at, verified_by,
        expected_minutes, clock_in_lat, clock_in_lng, within_geofence, concept,
+       auto_closed_at,
        employee_profile:employee_profiles!inner(
          group_member:group_members!inner(
            id, display_name, avatar_url, group_id
@@ -207,6 +215,26 @@ export default async function ShiftReviewPage({
             </Link>
           </div>
         </CardHeader>
+        {/* The clock_out here was written by the sweep at the group's ceiling,
+            not by a person (0029). Saying so where the employer decides is the
+            whole point of the auto_closed_at column: approving without reading
+            pays hours nobody worked. */}
+        {shift.auto_closed_at && !verified && (
+          <CardBody className="pt-0">
+            <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
+              <span>
+                Este turno lo cerró el sistema porque quedó abierto más horas de
+                las que permite la configuración del grupo.{" "}
+                <strong className="font-medium">
+                  La hora de salida es estimada, no la fichó nadie.
+                </strong>{" "}
+                Preguntale a qué hora se fue y corregila antes de aprobar.
+              </span>
+            </div>
+          </CardBody>
+        )}
+
         {/* Notes moved into the review form below, where the employee's note is
             shown labelled and read-only instead of raw. */}
         {shift.within_geofence !== null && (

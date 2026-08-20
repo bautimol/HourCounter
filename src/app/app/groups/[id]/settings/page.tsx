@@ -10,6 +10,7 @@ import {
 import { PageHeader } from "@/components/page-header";
 import { GroupAvatarUploader } from "./group-avatar-uploader";
 import { GeofenceSection } from "./geofence-section";
+import { AutoCloseSection } from "./auto-close-section";
 
 export default async function GroupSettingsPage({
   params,
@@ -22,7 +23,7 @@ export default async function GroupSettingsPage({
   const { data: group } = await supabase
     .from("groups")
     .select(
-      "id, name, avatar_url, geofence_enabled, geofence_lat, geofence_lng, geofence_radius_m",
+      "id, name, avatar_url, geofence_enabled, geofence_lat, geofence_lng, geofence_radius_m, auto_close_after_minutes",
     )
     .eq("id", id)
     .maybeSingle();
@@ -83,6 +84,15 @@ export default async function GroupSettingsPage({
         initialRadius={
           group.geofence_radius_m != null
             ? Number(group.geofence_radius_m)
+            : null
+        }
+      />
+
+      <AutoCloseSection
+        groupId={id}
+        initialMinutes={
+          group.auto_close_after_minutes != null
+            ? Number(group.auto_close_after_minutes)
             : null
         }
       />

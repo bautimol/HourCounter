@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { friendlyError } from "@/lib/errors";
 
 export type UpdateGroupAvatarState = {
   error: string | null;
@@ -141,5 +142,65 @@ export async function updateGeofenceAction(
 
   revalidatePath(`/app/groups/${groupId}/settings`);
   revalidatePath(`/app/groups/${groupId}`);
+  return { error: null, ok: true };
+}
+
+// ---- Auto-close ceiling ----
+
+export type AutoCloseState = {
+  error: string | null;
+  ok: boolean;
+};
+
+/**
+ * Sets how long an open shift may run before the sweep closes it.
+ *
+ * Hours in the form, minutes in the database — `expected_minutes` on
+ * time_entries is already in minutes, and the sweep compares the two with
+ * least(), so converting once here keeps SQL from converting on every read.
+ *
+ * "Sin tope" sends NULL rather than 0. A zero would make least() pick 0 for
+ * every open shift and write clock_out = clock_in, which violates the table
+ * check — and because the sweep is global, that error would surface on ordinary
+ * page reads for every user in the database, not just this group.
+ */
+export async function updateAutoCloseAction(
+  groupId: string,
+  _prevState: AutoCloseState,
+  formData: FormData,
+): Promise<AutoCloseState> {
+  const enabled = String(formData.get("enabled") ?? "0") === "1";
+  const hoursRaw = String(formData.get("hours") ?? "").trim();
+
+  let minutes: number | null = null;
+
+  if (enabled) {
+    if (hoursRaw === "") {
+      return { error: "Poné después de cuántas horas se cierra.", ok: false };
+    }
+    const hours = Number(hoursRaw);
+    if (!Number.isInteger(hours) || hours < 4 || hours > 24) {
+      return { error: "Tiene que ser un número entero entre 4 y 24 horas.", ok: false };
+    }
+    minutes = hours * 60;
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("update_group_auto_close", {
+    target_group_id: groupId,
+    new_minutes: minutes,
+  });
+
+  if (error) {
+    return {
+      error: friendlyError(
+        error.message,
+        "No pudimos guardar el cierre automático. Probá de nuevo.",
+      ),
+      ok: false,
+    };
+  }
+
+  revalidatePath(`/app/groups/${groupId}`, "layout");
   return { error: null, ok: true };
 }

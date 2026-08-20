@@ -144,7 +144,10 @@ export default async function GroupDetailPage({
             )
             .eq("employee_profile.group_member.group_id", id)
             .eq("employee_profile.group_member.status", "active")
-            .eq("status", "closed")
+            // needs_review incluido a proposito: un turno cerrado por el techo
+            // (0029) cae ahi, y si el badge solo contara 'closed' la migracion
+            // escondería su propia salida.
+            .in("status", ["closed", "needs_review"])
             .is("verified_at", null)
         : Promise.resolve({ count: 0 }),
     ]);
