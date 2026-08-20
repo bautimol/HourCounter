@@ -20,6 +20,7 @@ const LINKS = {
   producto: [
     { href: "/signup", label: "Crear cuenta" },
     { href: "/login", label: "Iniciar sesión" },
+    { href: "/nosotros", label: "Sobre nosotros" },
   ],
   ayuda: [
     { href: "/faq", label: "Preguntas frecuentes" },
